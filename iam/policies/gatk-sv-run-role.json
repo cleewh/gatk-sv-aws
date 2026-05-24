@@ -1,0 +1,63 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "S3ReadReferencesAndInputs",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/reference/GRCh38/*",
+        "arn:aws:s3:::omics-ref-ap-southeast-1-__ACCOUNT_ID__",
+        "arn:aws:s3:::omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/*",
+        "arn:aws:s3:::omics-cohorts-ap-southeast-1-__ACCOUNT_ID__",
+        "arn:aws:s3:::omics-wdl-ap-southeast-1-__ACCOUNT_ID__/workflows/*",
+        "arn:aws:s3:::omics-wdl-ap-southeast-1-__ACCOUNT_ID__"
+      ]
+    },
+    {
+      "Sid": "S3WriteOutputs",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": [
+        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1/runs/*"
+      ]
+    },
+    {
+      "Sid": "EcrPullMappedReposOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchCheckLayerAvailability"
+      ],
+      "Resource": [
+        "arn:aws:ecr:ap-southeast-1:__ACCOUNT_ID__:repository/quay/biocontainers/samtools",
+        "arn:aws:ecr:ap-southeast-1:__ACCOUNT_ID__:repository/ecr-public/lts/ubuntu"
+      ]
+    },
+    {
+      "Sid": "EcrAuth",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LogsWriteOmicsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "arn:aws:logs:ap-southeast-1:__ACCOUNT_ID__:log-group:/aws/omics/*"
+    }
+  ]
+}

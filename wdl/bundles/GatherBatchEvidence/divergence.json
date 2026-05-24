@@ -1,0 +1,6 @@
+[
+  {"module":"GatherBatchEvidence","upstream_path":"wdl/GatherBatchEvidence.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcfs')","upstream_commit":"7eb2af1feea9"},
+  {"module":"GatherBatchEvidence","upstream_path":"wdl/GatherBatchEvidence.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'std_melt_vcf_tar')","upstream_commit":"7eb2af1feea9"},
+  {"module":"GatherBatchEvidence","upstream_path":"wdl/PESRPreprocessing.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcfs')","upstream_commit":"7eb2af1feea9"},
+  {"module":"GatherBatchEvidence","upstream_path":"wdl/PESRPreprocessing.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'std_melt_vcf_tar')","upstream_commit":"7eb2af1feea9"}
+]

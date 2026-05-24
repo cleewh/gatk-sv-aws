@@ -1,0 +1,87 @@
+{
+  "baseline_filtered_depth_vcf": {
+    "description": "Input baseline_filtered_depth_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_filtered_pesr_vcf": {
+    "description": "Input baseline_filtered_pesr_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "batch": {
+    "description": "Input batch for workflow FilterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "depth_vcf": {
+    "description": "Input depth_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "dragen_vcf": {
+    "description": "Input dragen_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "evidence_metrics": {
+    "description": "Input evidence_metrics for workflow FilterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "linux_docker": {
+    "description": "Input linux_docker for workflow FilterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "manta_vcf": {
+    "description": "Input manta_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "outlier_cutoff_nIQR": {
+    "description": "Input outlier_cutoff_nIQR for workflow FilterBatch",
+    "optional": false,
+    "type": "Int"
+  },
+  "outlier_cutoff_table": {
+    "description": "Input outlier_cutoff_table for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "primary_contigs_list": {
+    "description": "Input primary_contigs_list for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "run_module_metrics": {
+    "description": "Input run_module_metrics for workflow FilterBatch",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "scramble_vcf": {
+    "description": "Input scramble_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow FilterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow FilterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "wham_vcf": {
+    "description": "Input wham_vcf for workflow FilterBatch",
+    "optional": true,
+    "type": "File"
+  }
+}

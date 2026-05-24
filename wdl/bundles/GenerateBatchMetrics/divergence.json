@@ -1,0 +1,3 @@
+[
+  {"module":"GenerateBatchMetrics","upstream_path":"wdl/GenerateBatchMetrics.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcf')","upstream_commit":"7eb2af1feea9"}
+]

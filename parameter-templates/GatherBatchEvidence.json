@@ -1,0 +1,437 @@
+{
+  "PE_files": {
+    "description": "Input PE_files for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "SD_files": {
+    "description": "Input SD_files for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "SR_files": {
+    "description": "Input SR_files for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "allosomal_contigs": {
+    "description": "Input allosomal_contigs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[String]"
+  },
+  "append_first_sample_to_ped": {
+    "description": "Input append_first_sample_to_ped for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "baseline_median_cov": {
+    "description": "Input baseline_median_cov for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_merged_dels": {
+    "description": "Input baseline_merged_dels for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_merged_dups": {
+    "description": "Input baseline_merged_dups for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "batch": {
+    "description": "Input batch for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "bincov_matrix": {
+    "description": "Input bincov_matrix for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "bincov_matrix_index": {
+    "description": "Input bincov_matrix_index for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "cnmops_allo_file": {
+    "description": "Input cnmops_allo_file for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "cnmops_chrom_file": {
+    "description": "Input cnmops_chrom_file for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "cnmops_docker": {
+    "description": "Input cnmops_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "cnmops_exclude_list": {
+    "description": "Input cnmops_exclude_list for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "cnmops_large_min_size": {
+    "description": "Input cnmops_large_min_size for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "contig_ploidy_model_tar": {
+    "description": "Input contig_ploidy_model_tar for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "counts": {
+    "description": "Input counts for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "cytoband": {
+    "description": "Input cytoband for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "defragment_max_dist": {
+    "description": "Input defragment_max_dist for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "dragen_vcfs": {
+    "description": "Input dragen_vcfs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "gatk4_jar_override": {
+    "description": "Input gatk4_jar_override for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "gcnv_active_class_padding_hybrid_mode": {
+    "description": "Input gcnv_active_class_padding_hybrid_mode for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_adamax_beta_1": {
+    "description": "Input gcnv_adamax_beta_1 for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_adamax_beta_2": {
+    "description": "Input gcnv_adamax_beta_2 for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_caller_external_admixing_rate": {
+    "description": "Input gcnv_caller_external_admixing_rate for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_caller_internal_admixing_rate": {
+    "description": "Input gcnv_caller_internal_admixing_rate for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_caller_update_convergence_threshold": {
+    "description": "Input gcnv_caller_update_convergence_threshold for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_cnv_coherence_length": {
+    "description": "Input gcnv_cnv_coherence_length for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_convergence_snr_averaging_window": {
+    "description": "Input gcnv_convergence_snr_averaging_window for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_convergence_snr_countdown_window": {
+    "description": "Input gcnv_convergence_snr_countdown_window for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_convergence_snr_trigger_threshold": {
+    "description": "Input gcnv_convergence_snr_trigger_threshold for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_copy_number_posterior_expectation_mode": {
+    "description": "Input gcnv_copy_number_posterior_expectation_mode for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "String"
+  },
+  "gcnv_depth_correction_tau": {
+    "description": "Input gcnv_depth_correction_tau for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_disable_annealing": {
+    "description": "Input gcnv_disable_annealing for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "gcnv_gatk_docker": {
+    "description": "Input gcnv_gatk_docker for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "String"
+  },
+  "gcnv_initial_temperature": {
+    "description": "Input gcnv_initial_temperature for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_learning_rate": {
+    "description": "Input gcnv_learning_rate for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_log_emission_samples_per_round": {
+    "description": "Input gcnv_log_emission_samples_per_round for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_log_emission_sampling_median_rel_error": {
+    "description": "Input gcnv_log_emission_sampling_median_rel_error for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_log_emission_sampling_rounds": {
+    "description": "Input gcnv_log_emission_sampling_rounds for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_mapping_error_rate": {
+    "description": "Input gcnv_mapping_error_rate for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_max_advi_iter_first_epoch": {
+    "description": "Input gcnv_max_advi_iter_first_epoch for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_max_advi_iter_subsequent_epochs": {
+    "description": "Input gcnv_max_advi_iter_subsequent_epochs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_max_calling_iters": {
+    "description": "Input gcnv_max_calling_iters for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_max_copy_number": {
+    "description": "Input gcnv_max_copy_number for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_max_training_epochs": {
+    "description": "Input gcnv_max_training_epochs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_min_training_epochs": {
+    "description": "Input gcnv_min_training_epochs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_model_tars": {
+    "description": "Input gcnv_model_tars for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "gcnv_num_thermal_advi_iters": {
+    "description": "Input gcnv_num_thermal_advi_iters for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "gcnv_p_alt": {
+    "description": "Input gcnv_p_alt for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "gcnv_qs_cutoff": {
+    "description": "Input gcnv_qs_cutoff for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Int"
+  },
+  "gcnv_sample_psi_scale": {
+    "description": "Input gcnv_sample_psi_scale for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "genome_file": {
+    "description": "Input genome_file for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "linux_docker": {
+    "description": "Input linux_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "manta_vcfs": {
+    "description": "Input manta_vcfs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "matrix_qc_distance": {
+    "description": "Input matrix_qc_distance for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Int"
+  },
+  "max_interval_size": {
+    "description": "Input max_interval_size for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "median_cov_mem_gb_per_sample": {
+    "description": "Input median_cov_mem_gb_per_sample for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "mei_bed": {
+    "description": "Input mei_bed for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "min_interval_size": {
+    "description": "Input min_interval_size for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "min_svsize": {
+    "description": "Input min_svsize for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Int"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "ploidy_sample_psi_scale": {
+    "description": "Input ploidy_sample_psi_scale for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "primary_contigs_fai": {
+    "description": "Input primary_contigs_fai for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "primary_contigs_list": {
+    "description": "Input primary_contigs_list for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "ref_copy_number_autosomal_contigs": {
+    "description": "Input ref_copy_number_autosomal_contigs for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Int"
+  },
+  "ref_dict": {
+    "description": "Input ref_dict for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "ref_panel_PE_files": {
+    "description": "Input ref_panel_PE_files for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "ref_panel_SD_files": {
+    "description": "Input ref_panel_SD_files for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "ref_panel_SR_files": {
+    "description": "Input ref_panel_SR_files for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "ref_panel_bincov_matrix": {
+    "description": "Input ref_panel_bincov_matrix for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "ref_panel_samples": {
+    "description": "Input ref_panel_samples for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[String]"
+  },
+  "rename_samples": {
+    "description": "Input rename_samples for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "run_matrix_qc": {
+    "description": "Input run_matrix_qc for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "run_module_metrics": {
+    "description": "Input run_module_metrics for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "run_ploidy": {
+    "description": "Input run_ploidy for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "samples": {
+    "description": "Input samples for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Array[String]"
+  },
+  "scramble_vcfs": {
+    "description": "Input scramble_vcfs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "sd_locs_vcf": {
+    "description": "Input sd_locs_vcf for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "subset_primary_contigs": {
+    "description": "Input subset_primary_contigs for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "sv_base_docker": {
+    "description": "Input sv_base_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_qc_docker": {
+    "description": "Input sv_pipeline_qc_docker for workflow GatherBatchEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "wham_vcfs": {
+    "description": "Input wham_vcfs for workflow GatherBatchEvidence",
+    "optional": true,
+    "type": "Array[File]"
+  }
+}

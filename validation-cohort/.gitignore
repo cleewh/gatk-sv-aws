@@ -1,0 +1,12 @@
+# Produced VCF is downloaded from S3 by the validation runbook;
+# don't commit binary VCF outputs.
+produced/cohort.vcf.gz
+produced/cohort.vcf.gz.tbi
+
+# Expected VCF must be produced on Terra and uploaded to S3
+# per docs/validation-runbook.md Step 1, then downloaded here.
+expected/*.vcf.gz
+expected/*.vcf.gz.tbi
+
+# But keep the directory layout
+!.gitkeep

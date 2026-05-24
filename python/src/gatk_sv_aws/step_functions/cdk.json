@@ -1,0 +1,9 @@
+{
+  "app": "python app.py",
+  "context": {
+    "target_region": "ap-southeast-1",
+    "healthomics_role_arn": "arn:aws:iam::__ACCOUNT_ID__:role/gatk-sv-healthomics-run-role",
+    "cache_id": "9564200",
+    "output_bucket": "healthomics-outputs-__ACCOUNT_ID__-apse1"
+  }
+}

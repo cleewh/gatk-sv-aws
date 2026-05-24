@@ -1,0 +1,16 @@
+{
+  "cohort_id": "gatk-sv-validation-2026q2",
+  "reference_build": "GRCh38",
+  "samples": [
+    {"sample_id": "NA12878", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA12878.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA12878.final.cram.crai", "sex": "F"},
+    {"sample_id": "HG00096", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00096.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00096.final.cram.crai", "sex": "M"},
+    {"sample_id": "HG00097", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00097.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00097.final.cram.crai", "sex": "F"},
+    {"sample_id": "HG00099", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00099.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00099.final.cram.crai", "sex": "F"},
+    {"sample_id": "HG00100", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00100.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00100.final.cram.crai", "sex": "F"},
+    {"sample_id": "HG00101", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00101.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00101.final.cram.crai", "sex": "M"},
+    {"sample_id": "HG00102", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00102.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00102.final.cram.crai", "sex": "F"},
+    {"sample_id": "NA19238", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA19238.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA19238.final.cram.crai", "sex": "F"},
+    {"sample_id": "NA19239", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA19239.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA19239.final.cram.crai", "sex": "M"},
+    {"sample_id": "HG00513", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00513.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00513.final.cram.crai", "sex": "F"}
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "launched_at": "2026-05-19T17:12:23Z",
+  "samples": [
+    "HG00096",
+    "HG00097",
+    "HG00099"
+  ],
+  "modules": [
+    "cc",
+    "scramble",
+    "cse"
+  ],
+  "runs": [
+    {
+      "id": "6077762",
+      "name": "cc-HG00096",
+      "module": "cc",
+      "sample": "HG00096"
+    },
+    {
+      "id": "1743249",
+      "name": "scramble-HG00096",
+      "module": "scramble",
+      "sample": "HG00096"
+    },
+    {
+      "id": "7563214",
+      "name": "cse-HG00096",
+      "module": "cse",
+      "sample": "HG00096"
+    },
+    {
+      "id": "2420095",
+      "name": "cc-HG00097",
+      "module": "cc",
+      "sample": "HG00097"
+    },
+    {
+      "id": "4017509",
+      "name": "scramble-HG00097",
+      "module": "scramble",
+      "sample": "HG00097"
+    },
+    {
+      "id": "1916725",
+      "name": "cse-HG00097",
+      "module": "cse",
+      "sample": "HG00097"
+    },
+    {
+      "id": "9190203",
+      "name": "cc-HG00099",
+      "module": "cc",
+      "sample": "HG00099"
+    },
+    {
+      "id": "4939073",
+      "name": "scramble-HG00099",
+      "module": "scramble",
+      "sample": "HG00099"
+    },
+    {
+      "id": "8532040",
+      "name": "cse-HG00099",
+      "module": "cse",
+      "sample": "HG00099"
+    }
+  ],
+  "total_runs": 9
+}

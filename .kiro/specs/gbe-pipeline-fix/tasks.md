@@ -1,0 +1,102 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - GBE Missing Params and Glob-All Discovery
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases:
+    - (a) GBE params dict missing `min_interval_size` / `max_interval_size`
+    - (b) `discover_gse_outputs()` returns arrays with length ≠ 10 when S3 has duplicates
+    - (c) Array element at index `i` does not contain `SAMPLES[i]` in its path
+  - **Test file**: `tests/gatk_sv_healthomics/test_gbe_bug_condition.py`
+  - **Test framework**: pytest + hypothesis
+  - **Test details**:
+    - Mock S3 paginator responses with realistic duplicate files (e.g., 2 `.counts.tsv.gz` per sample from prior test runs)
+    - Use hypothesis to generate S3 listings with varying numbers of duplicates per sample per output type (1-5 files each)
+    - Property under test: `isBugCondition(params, gse_outputs)` from design
+    - Assert that for the UNFIXED `discover_gse_outputs()`:
+      - `len(outputs[key]) != len(SAMPLES)` for at least one key when duplicates exist
+      - OR `SAMPLES[i]` not reliably in `outputs[key][i]` for all keys
+    - Assert that the UNFIXED params dict does NOT contain `min_interval_size` or `max_interval_size`
+    - The property assertions encode the EXPECTED behavior (len==10, alignment, params present) so they FAIL on unfixed code
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists)
+  - Document counterexamples found (e.g., "discover_gse_outputs returns 20 counts instead of 10", "params missing min_interval_size")
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Existing Params, Prefix Routing, and TrainGCNV Discovery
+  - **IMPORTANT**: Follow observation-first methodology
+  - **Test file**: `tests/gatk_sv_healthomics/test_gbe_preservation.py`
+  - **Test framework**: pytest + hypothesis
+  - **Observation phase** (run on UNFIXED code):
+    - Observe: params dict contains `batch`, `samples`, all docker images, all reference files, boolean flags with their current values
+    - Observe: NA12878 prefix is `runs/gatk-sv-e2e/NA12878/optimized/`
+    - Observe: Other samples use prefix `runs/gatk-sv-e2e/{sample_id}/gse/`
+    - Observe: `discover_train_gcnv_outputs()` correctly finds `contig_ploidy_model_tar` and `gcnv_model_tars`
+    - Observe: `--status` code path does not raise errors
+    - Observe: When S3 has exactly 1 file per sample per type (clean listing), `discover_gse_outputs()` returns arrays of length 10
+  - **Property-based tests**:
+    - Property: For all subsets of existing param keys, those keys exist in the params dict with their original values (batch="batch_01", samples=SAMPLES, docker images match DOCKER dict, etc.)
+    - Property: For all sample_ids in SAMPLES, the prefix for NA12878 contains "optimized/" and all others contain "gse/"
+    - Property: For all S3 listings with exactly 1 file per sample per type, `discover_gse_outputs()` returns arrays of length 10 (baseline behavior)
+    - Property: `discover_train_gcnv_outputs()` with mocked S3 containing contig-ploidy-model and gcnv-model-shard tars returns correct structure
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [ ] 3. Fix for GBE missing params and glob-all discovery bug
+
+  - [x] 3.1 Add missing interval size parameters to GBE params dict
+    - Add `"min_interval_size": 101` to the `params` dict in the `gbe` stage block (after `min_svsize`)
+    - Add `"max_interval_size": 2000` to the `params` dict in the `gbe` stage block (after `min_interval_size`)
+    - _Bug_Condition: isBugCondition(params, gse_outputs) where "min_interval_size" NOT IN params OR "max_interval_size" NOT IN params_
+    - _Expected_Behavior: params["min_interval_size"] == 101 AND params["max_interval_size"] == 2000_
+    - _Preservation: All existing params (batch, samples, docker, refs, flags) remain unchanged_
+    - _Requirements: 2.1_
+
+  - [x] 3.2 Rewrite discover_gse_outputs() for per-sample single-file discovery
+    - Iterate over SAMPLES in order
+    - For each sample, construct prefix: `runs/gatk-sv-e2e/{sample_id}/optimized/` for NA12878, `runs/gatk-sv-e2e/{sample_id}/gse/` for others
+    - List all objects under the sample prefix
+    - For each output type, find matching files by suffix pattern:
+      - counts: `.counts.tsv.gz`
+      - pe_files: `.pe.txt.gz`
+      - sr_files: `.sr.txt.gz`
+      - sd_files: `.sd.txt.gz`
+      - manta_vcfs: contains `manta` AND ends `.vcf.gz` (exclude `.tbi`)
+      - wham_vcfs: contains `wham` AND ends `.vcf.gz`
+      - scramble_vcfs: contains `scramble` AND ends `.vcf.gz`
+    - If zero matches for a sample × output type: raise `FileNotFoundError` with sample and type info
+    - If multiple matches: select the file with the latest `LastModified` timestamp (handles duplicates from test runs)
+    - Append exactly one URI per sample per output type
+    - After all samples processed, assert all arrays have `len(SAMPLES)` elements as safety check
+    - _Bug_Condition: discover_gse_outputs() returns arrays with len != len(SAMPLES) or misaligned ordering_
+    - _Expected_Behavior: All 7 arrays have exactly len(SAMPLES) elements, element[i] path contains SAMPLES[i]_
+    - _Preservation: NA12878 uses optimized/ prefix, others use gse/ prefix, TrainGCNV discovery unaffected_
+    - _Requirements: 2.2, 2.3, 2.4_
+
+  - [x] 3.3 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - GBE Params and Discovery Arrays Correct
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior (params present, arrays len==10, alignment correct)
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+  - [x] 3.4 Verify preservation tests still pass
+    - **Property 2: Preservation** - Existing Params, Prefix Routing, and TrainGCNV Discovery
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix (no regressions)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite: `pytest tests/gatk_sv_healthomics/test_gbe_bug_condition.py tests/gatk_sv_healthomics/test_gbe_preservation.py -v`
+  - Ensure all tests pass, ask the user if questions arise.

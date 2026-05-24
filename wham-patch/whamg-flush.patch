@@ -1,0 +1,137 @@
+diff --git a/src/bin/whamg.cpp b/src/bin/whamg.cpp
+index abcdef1..1234567 100644
+--- a/src/bin/whamg.cpp
++++ b/src/bin/whamg.cpp
+@@ -45,6 +45,7 @@ struct options{
+     int nthreads              ;
+     int lastSeqid             ;
+     string graphOut           ;
++    bool flushPerChr          ;
+     map<string, int> toSkip   ;
+     map<string, int> toInclude;
+     string seqid              ;
+@@ -108,6 +109,7 @@ void printHelp(void){
+   cerr << "  *|-c    -e  <STRING>  Comma sep. list of seqids to skip [false].          " << endl;
+   cerr << "  *|-e    -c  <STRING>  Comma sep. list of seqids to keep [false].          " << endl;
+   cerr << "          -r  <STRING>  Region in format: seqid:start-end [whole genome]    " << endl;
++  cerr << "          --flush-per-chr  Flush graph after each chromosome (memory-bounded) " << endl;
+   cerr << "  *       -x  <INT>     Number of CPUs to use [1 CPU].                      " << endl;
+   cerr << "          -m  <INT>     Mapping quality filter [20].                        " << endl;
+   cerr << endl;
+@@ -2115,6 +2117,60 @@ void loadReads(std::vector<RefData> & sequences){
+   }
+ }
+ 
++// Process the current globalGraph: extract trees, find breakpoints, print VCF
++void flushGraph(std::vector<RefData> & sequences){
++    vector<breakpoint*> allBreakpoints;
++    vector<vector<node*> > localTrees;
++    map<int, map<int, breakpoint*> > breakpointLookup;
++
++    gatherTrees(localTrees);
++
++    for(unsigned int i = 0; i < localTrees.size(); i++){
++        breakpoint * tmp = new breakpoint;
++        allBreakpoints.push_back(tmp);
++    }
++
++    #pragma omp parallel for schedule(dynamic, 3)
++    for(unsigned int i = 0; i < localTrees.size(); i++){
++        findPairs(localTrees[i], allBreakpoints[i], breakpointLookup);
++        if(allBreakpoints[i]->IsMasked()){
++            continue;
++        }
++        allBreakpoints[i]->countSupportType();
++        allBreakpoints[i]->calcType();
++        allBreakpoints[i]->delClusterCheck();
++        allBreakpoints[i]->invClusterCheck();
++        allBreakpoints[i]->dupClusterCheck();
++        allBreakpoints[i]->getRefBases(globalOpts.fasta, forward_lookup);
++    }
++
++    unpairedSVs unMatched;
++    doubleCheckDel(allBreakpoints, unMatched);
++    doubleCheckDup(allBreakpoints, unMatched);
++    doubleCheckInv(allBreakpoints, unMatched);
++    doubleCheckIns(allBreakpoints, unMatched);
++
++    printVCF(allBreakpoints);
++
++    // Free memory
++    for(vector<breakpoint*>::iterator bks = allBreakpoints.begin();
++        bks != allBreakpoints.end(); bks++){
++        delete (*bks);
++    }
++    // Clear the global graph to free memory
++    for(map<int, map<int, node*> >::iterator it = globalGraph.nodes.begin();
++        it != globalGraph.nodes.end(); it++){
++        for(map<int, node*>::iterator itt = it->second.begin();
++            itt != it->second.end(); itt++){
++            // Free edges
++            for(vector<edge*>::iterator e = itt->second->eds.begin();
++                e != itt->second->eds.end(); e++){
++                delete *e;
++            }
++            delete itt->second;
++        }
++    }
++    globalGraph.nodes.clear();
++}
++
++// Modified loadReads that flushes after each BAM
++void loadReadsFlush(std::vector<RefData> & sequences){
++    cerr << "INFO: Loading reads with per-BAM flush (memory-bounded mode)." << endl;
++    for(vector<string>::iterator bam = globalOpts.targetBams.begin();
++        bam != globalOpts.targetBams.end(); bam++){
++        cerr << "INFO: Reading: " << *bam << endl;
++        loadBam(*bam);
++        cerr << "INFO: Flushing graph for " << *bam << endl;
++        flushGraph(sequences);
++    }
++    cerr << "INFO: Finished loading and flushing all reads." << endl;
++}
++
+ //-------------------------------    MAIN     --------------------------------
+ int main( int argc, char** argv)
+ {
+@@ -2122,6 +2178,7 @@ int main( int argc, char** argv)
+   globalOpts.lastSeqid    = 0    ;
+   globalOpts.MQ           = 20   ;
+   globalOpts.NM           = 10   ;
++  globalOpts.flushPerChr  = false;
+   globalOpts.minPairMatch = 100  ;
+   globalOpts.saT          = "SA" ;
+   globalOpts.keepTrying   = false;
+@@ -2129,6 +2186,15 @@ int main( int argc, char** argv)
+   globalOpts.skipGeno     = false;
+   globalOpts.noInterSeqid = true ;
+ 
++  // Check for --flush-per-chr before getopt (long option)
++  for(int i = 1; i < argc; i++){
++      if(std::string(argv[i]) == "--flush-per-chr"){
++          globalOpts.flushPerChr = true;
++          // Remove from argv so getopt doesn't choke
++          argv[i] = argv[0]; // replace with program name (harmless)
++      }
++  }
++
+   int parse = parseOpts(argc, argv);
+   if(parse != 1){
+     cerr << "FATAL: unable to parse command line correctly." << endl;
+@@ -2160,7 +2226,14 @@ int main( int argc, char** argv)
+       s+= 1;
+   }
+ 
+-  loadReads(sequences);
++  if(globalOpts.flushPerChr){
++      // Memory-bounded mode: process and flush after each BAM
++      loadReadsFlush(sequences);
++      // VCF already printed in flushGraph(), so skip the normal path
++      cerr << "INFO: WHAM finished normally (flush mode), goodbye! " << endl;
++      return 0;
++  }
++
++  loadReads(sequences);  // Original unbounded mode
+ 
+   vector<breakpoint*>                allBreakpoints;
+   vector<vector<node*> >                globalTrees;

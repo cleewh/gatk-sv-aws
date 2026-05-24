@@ -1,0 +1,18 @@
+{
+  "run_id": "8170946",
+  "workflow_id": "2282352",
+  "cohort": "gatk-sv-validation-2026q2",
+  "samples": [
+    "NA12878",
+    "HG00096",
+    "HG00097",
+    "HG00099",
+    "HG00100",
+    "HG00101",
+    "HG00102",
+    "NA19238",
+    "NA19239",
+    "HG00513"
+  ],
+  "output_uri": "s3://healthomics-outputs-__ACCOUNT_ID__-apse1/runs/gatk-sv-e2e/batch/train-gcnv/"
+}

@@ -1,0 +1,126 @@
+{
+  "build": "GRCh38",
+  "source_pipeline": "broadinstitute/gatk-sv@7eb2af1feea9",
+  "notes": [
+    "Canonical upstream URIs, extracted from broadinstitute/gatk-sv@7eb2af1feea9",
+    "inputs/values/resources_hg38.json. Mixes two public GCS buckets:",
+    "  gs://gcp-public-data--broad-references/ (primary reference files)",
+    "  gs://gatk-sv-resources-public/           (SV-specific panels and tracks)",
+    "",
+    "Broad also mirrors the primary reference files under the public-requester-pays",
+    "bucket s3://broad-references/hg38/v0/ (same file names). Because that mirror",
+    "is in us-east-1, cross-region copy via boto3 s3.copy is fine for",
+    "intra-AWS staging and avoids egress costs on reruns.",
+    "",
+    "expected_md5/expected_sha256 are left null until we compute them post-stage.",
+    "Until then the stager copies without checksum verification; fill them in",
+    "after the first successful stage for regression pinning."
+  ],
+  "files": [
+    {
+      "logical_name": "Homo_sapiens_assembly38.fasta",
+      "source_uri": "s3://broad-references/hg38/v0/Homo_sapiens_assembly38.fasta",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": 3249912778
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly38.fasta.fai",
+      "source_uri": "s3://broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": 160928
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly38.dict",
+      "source_uri": "s3://broad-references/hg38/v0/Homo_sapiens_assembly38.dict",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": 581712
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly38.dbsnp138.vcf",
+      "source_uri": "s3://broad-references/hg38/v0/Homo_sapiens_assembly38.dbsnp138.vcf",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": 10950827213
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly38.dbsnp138.vcf.idx",
+      "source_uri": "s3://broad-references/hg38/v0/Homo_sapiens_assembly38.dbsnp138.vcf.idx",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": 12480412
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly38.fasta.64.alt",
+      "source_uri": "s3://broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.alt",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": 487553
+    },
+    {
+      "logical_name": "gs_primary_contigs.list",
+      "source_uri": "gs://gcp-public-data--broad-references/hg38/v0/sv-resources/resources/v1/primary_contigs.list",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_primary_contigs.fai",
+      "source_uri": "gs://gcp-public-data--broad-references/hg38/v0/sv-resources/resources/v1/contig.fai",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_allosome.fai",
+      "source_uri": "gs://gcp-public-data--broad-references/hg38/v0/sv-resources/resources/v1/allosome.fai",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_autosome.fai",
+      "source_uri": "gs://gcp-public-data--broad-references/hg38/v0/sv-resources/resources/v1/autosome.fai",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_par_bed",
+      "source_uri": "gs://gatk-sv-resources-public/hg38/v0/sv-resources/resources/v1/hg38.par.bed",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_contig_ploidy_priors.tsv",
+      "source_uri": "gs://gatk-sv-resources-public/hg38/v0/sv-resources/resources/v1/hg38.contig_ploidy_priors_homo_sapiens.tsv",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_preprocessed_intervals.interval_list",
+      "source_uri": "gs://gatk-sv-resources-public/hg38/v0/sv-resources/resources/v1/preprocessed_intervals.interval_list",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_gnomad_v4_SV.Freq.tsv.gz",
+      "source_uri": "gs://gatk-sv-resources-public/gnomad_AF/gnomad_v4_SV.Freq.tsv.gz",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "gs_gencode.v47.protein_coding.canonical.gtf",
+      "source_uri": "gs://gatk-sv-resources-public/hg38/v0/sv-resources/resources/v1/gencode.v47.basic.protein_coding.canonical.gtf",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "batch": {
+    "description": "Input batch for workflow GenotypeBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "contig_list": {
+    "description": "Input contig_list for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "depth_exclusion_intervals": {
+    "description": "Input depth_exclusion_intervals for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow GenotypeBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "median_coverage": {
+    "description": "Input median_coverage for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "pe_file": {
+    "description": "Input pe_file for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "pesr_exclusion_intervals": {
+    "description": "Input pesr_exclusion_intervals for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "ploidy_table": {
+    "description": "Input ploidy_table for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "rd_file": {
+    "description": "Input rd_file for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "rf_cutoffs": {
+    "description": "Input rf_cutoffs for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "sr_file": {
+    "description": "Input sr_file for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow GenotypeBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow GenotypeBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "training_intervals": {
+    "description": "Input training_intervals for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "vcf": {
+    "description": "Input vcf for workflow GenotypeBatch",
+    "optional": false,
+    "type": "File"
+  }
+}

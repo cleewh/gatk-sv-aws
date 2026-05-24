@@ -1,0 +1,47 @@
+{
+  "build": "GRCh38",
+  "destination_bucket": "omics-ref-ap-southeast-1-__ACCOUNT_ID__",
+  "destination_prefix": "gatk-sv/reference/GRCh38",
+  "region": "ap-southeast-1",
+  "last_updated": "2026-05-12T17:35:00Z",
+  "notes": [
+    "Enumerates reference files actually staged to ap-southeast-1.",
+    "Updated by scripts/stage_reference.py (when operators extend the set).",
+    "Missing heavy files (dbsnp138.vcf ~10 GB, fasta.64.bwt ~3 GB,",
+    "fasta.64.sa ~1.5 GB, fasta.64.pac ~767 MiB, preprocessed_intervals.interval_list",
+    "~778 MiB, gencode.v47.*.gtf ~289 MiB) are intentionally left for",
+    "operator go-ahead because each involves a real GCP/S3 egress cost."
+  ],
+  "staged_files": [
+    {"logical_name": "Homo_sapiens_assembly38.fasta",                   "size_bytes": 3249912778, "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.fai",               "size_bytes": 160928,     "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.dict",                    "size_bytes": 581712,     "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.64.alt",            "size_bytes": 487553,     "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.64.amb",            "size_bytes": 20199,      "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.64.ann",            "size_bytes": 455474,     "source": "s3"},
+    {"logical_name": "gs_primary_contigs.list",                         "size_bytes": 133,        "source": "gcs"},
+    {"logical_name": "gs_primary_contigs.fai",                          "size_bytes": 809,        "source": "gcs"},
+    {"logical_name": "gs_allosome.fai",                                 "size_bytes": 67,         "source": "gcs"},
+    {"logical_name": "gs_autosome.fai",                                 "size_bytes": 743,        "source": "gcs"},
+    {"logical_name": "gs_par_bed",                                      "size_bytes": 105,        "source": "gcs"},
+    {"logical_name": "gs_hg38.par.bed",                                 "size_bytes": 105,        "source": "gcs"},
+    {"logical_name": "gs_contig_ploidy_priors.tsv",                     "size_bytes": 664,        "source": "gcs"},
+    {"logical_name": "gs_wgd_scoring_mask.bed",                         "size_bytes": 75264,      "source": "gcs"},
+    {"logical_name": "gs_clustering_config.part_one.tsv",               "size_bytes": 222,        "source": "gcs"},
+    {"logical_name": "gs_clustering_config.part_two.tsv",               "size_bytes": 124,        "source": "gcs"},
+    {"logical_name": "gs_depth_blacklist.sorted.bed.gz",                "size_bytes": 363,        "source": "gcs"},
+    {"logical_name": "gs_noncoding.sort.hg38.bed",                      "size_bytes": 64226099,   "source": "gcs"},
+    {"logical_name": "gs_hg38.genome",                                  "size_bytes": 365,        "source": "gcs"},
+    {"logical_name": "gs_PESR.encode.blacklist.sorted.bed.gz",          "size_bytes": 896,        "source": "gcs"},
+    {"logical_name": "gs_gnomad_v4_SV.Freq.tsv.gz",                     "size_bytes": 82752307,   "source": "gcs"}
+  ],
+  "pending_operator_approval": [
+    {"logical_name": "Homo_sapiens_assembly38.dbsnp138.vcf",            "size_bytes": 10950827213, "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.dbsnp138.vcf.idx",        "size_bytes": 12480412,   "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.64.bwt",            "size_bytes": 3217347004, "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.64.sa",             "size_bytes": 1608673512, "source": "s3"},
+    {"logical_name": "Homo_sapiens_assembly38.fasta.64.pac",            "size_bytes": 804336731,  "source": "s3"},
+    {"logical_name": "gs_preprocessed_intervals.interval_list",         "size_bytes": 815704236,  "source": "gcs"},
+    {"logical_name": "gs_gencode.v47.protein_coding.canonical.gtf",     "size_bytes": 302736183,  "source": "gcs"}
+  ]
+}

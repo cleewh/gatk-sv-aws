@@ -1,0 +1,6 @@
+# Per-sample divergence test inputs are pulled from S3 via
+# scripts/divergence_pull.py. Don't commit the binaries.
+*/healthomics/*
+*/ec2/*
+
+!.gitkeep

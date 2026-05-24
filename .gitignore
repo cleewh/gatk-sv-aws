@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+.venv/
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AWS
+.aws-sam/
+
+# Editor
+.vscode/
+.idea/
+
+# Validation cohort: large VCFs are pulled from S3 by the runbook,
+# never committed.
+validation-cohort/produced/*.vcf.gz
+validation-cohort/produced/*.vcf.gz.tbi
+validation-cohort/expected/*.vcf.gz
+validation-cohort/expected/*.vcf.gz.tbi
+
+# Divergence test inputs are pulled from S3 by scripts/divergence_pull.py,
+# never committed (each sample is ~1 MB but they're build artifacts).
+divergence/*/healthomics/*
+divergence/*/ec2/*
+
+# Build artifacts that shouldn't ship: keep .gitkeep markers
+!.gitkeep
+!.gitignore
+
+# Run logs and cached run state
+*.log
+runs/

@@ -1,0 +1,57 @@
+{
+  "cohort": {
+    "description": "Input cohort for workflow MergeBatchSites",
+    "optional": false,
+    "type": "String"
+  },
+  "depth_vcfs": {
+    "description": "Input depth_vcfs for workflow MergeBatchSites",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow MergeBatchSites",
+    "optional": false,
+    "type": "String"
+  },
+  "java_mem_fraction": {
+    "description": "Input java_mem_fraction for workflow MergeBatchSites",
+    "optional": true,
+    "type": "Float"
+  },
+  "pesr_vcfs": {
+    "description": "Input pesr_vcfs for workflow MergeBatchSites",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "ploidy_tables": {
+    "description": "Input ploidy_tables for workflow MergeBatchSites",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow MergeBatchSites",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta": {
+    "description": "Input reference_fasta for workflow MergeBatchSites",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta_fai": {
+    "description": "Input reference_fasta_fai for workflow MergeBatchSites",
+    "optional": false,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow MergeBatchSites",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow MergeBatchSites",
+    "optional": false,
+    "type": "String"
+  }
+}

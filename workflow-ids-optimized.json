@@ -1,0 +1,61 @@
+{
+  "description": "Final optimized workflow IDs for GatherSampleEvidence. Based on empirical testing in ap-southeast-1.",
+  "reindex": {
+    "workflow_id": "8437840",
+    "cpu": 2,
+    "memory_gb": 7.5,
+    "pre_localize": false,
+    "notes": "samtools index on CRAM"
+  },
+  "collect_counts": {
+    "workflow_id": "3901751",
+    "cpu": 4,
+    "memory_gb": 7.5,
+    "pre_localize": false,
+    "expected_runtime_min": 90,
+    "notes": "Sequential scanner - FUSE is fine, pre-localize doesn't help"
+  },
+  "collect_sv_evidence": {
+    "workflow_id": "7038412",
+    "cpu": 4,
+    "memory_gb": 7.5,
+    "pre_localize": false,
+    "expected_runtime_min": 100,
+    "notes": "Sequential scanner - FUSE is fine, pre-localize causes disk space failure"
+  },
+  "manta": {
+    "workflow_id": "4091926",
+    "cpu": 16,
+    "memory_gb": 32,
+    "pre_localize": true,
+    "expected_runtime_min": 77,
+    "notes": "Random access tool - pre-localize gives 4x speedup (306 -> 77 min). Uses /usr/local/bin/manta/bin/configManta.py"
+  },
+  "scramble": {
+    "workflow_id": "3817166",
+    "cpu": 12,
+    "memory_gb": 32,
+    "storage_type": "STATIC",
+    "storage_capacity_gib": 1200,
+    "pre_localize": true,
+    "parallel": 12,
+    "expected_runtime_min": 25,
+    "notes": "STATIC storage required for CRAM pre-localization. 12 parallel cluster_identifier -r processes with wait -n concurrency limiter. Max tested: 12 works, 24 fails."
+  },
+  "wham_parallel": {
+    "workflow_id": "5369691",
+    "cpu": 48,
+    "memory_gb": 64,
+    "pre_localize": true,
+    "expected_runtime_min": 45,
+    "notes": "Single instance, pre-localize once, 24 parallel whamg processes. Avoids 24 redundant CRAM copies."
+  },
+  "lessons_learned": {
+    "pre_localization": "Only helps random-access tools (Manta, Wham, Scramble). Sequential scanners (CollectCounts, CollectSVEvidence) are fine on FUSE.",
+    "disk_space": "HealthOmics DYNAMIC storage /tmp has limited space. Copying 14.7 GB CRAM to /tmp fails even with 32 GB RAM. Use pre-localize only when the tool needs random access.",
+    "manta_path": "/usr/local/bin/manta/bin/configManta.py (not /usr/local/bin/configManta.py)",
+    "scramble_path": "/app/scramble-gatk-sv/cluster_identifier/src/build/cluster_identifier",
+    "crai_colocation": "Manta and Scramble require index co-located with CRAM. Use 'ln -sf' or 'cp' to place .crai next to .cram",
+    "wham_sharding": "Per-chromosome sharding with separate runs is wasteful (each copies full CRAM). Single large instance with parallel processes is better."
+  }
+}

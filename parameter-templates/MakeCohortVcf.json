@@ -1,0 +1,262 @@
+{
+  "HERVK_reference": {
+    "description": "Input HERVK_reference for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "LINE1_reference": {
+    "description": "Input LINE1_reference for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "allosome_fai": {
+    "description": "Input allosome_fai for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "baseline_cleaned_vcf": {
+    "description": "Input baseline_cleaned_vcf for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_cluster_vcf": {
+    "description": "Input baseline_cluster_vcf for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_complex_genotype_vcf": {
+    "description": "Input baseline_complex_genotype_vcf for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_complex_resolve_vcf": {
+    "description": "Input baseline_complex_resolve_vcf for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "batches": {
+    "description": "Input batches for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[String]"
+  },
+  "bin_exclude": {
+    "description": "Input bin_exclude for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "bincov_files": {
+    "description": "Input bincov_files for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "chr_x": {
+    "description": "Input chr_x for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "chr_y": {
+    "description": "Input chr_y for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "clustering_config_part1": {
+    "description": "Input clustering_config_part1 for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "clustering_config_part2": {
+    "description": "Input clustering_config_part2 for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "cohort_name": {
+    "description": "Input cohort_name for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "contig_list": {
+    "description": "Input contig_list for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "cytobands": {
+    "description": "Input cytobands for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "depth_vcfs": {
+    "description": "Input depth_vcfs for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "disc_files": {
+    "description": "Input disc_files for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "genotyping_rd_tables": {
+    "description": "Input genotyping_rd_tables for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "intron_reference": {
+    "description": "Input intron_reference for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "java_mem_fraction": {
+    "description": "Input java_mem_fraction for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "Float"
+  },
+  "linux_docker": {
+    "description": "Input linux_docker for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "max_gq": {
+    "description": "Input max_gq for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "Int"
+  },
+  "max_samples_per_shard_clean_vcf_step3": {
+    "description": "Input max_samples_per_shard_clean_vcf_step3 for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "Int"
+  },
+  "max_shard_size_resolve": {
+    "description": "Input max_shard_size_resolve for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Int"
+  },
+  "median_coverage_files": {
+    "description": "Input median_coverage_files for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "mei_bed": {
+    "description": "Input mei_bed for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "merge_cluster_vcfs": {
+    "description": "Input merge_cluster_vcfs for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "merge_complex_genotype_vcfs": {
+    "description": "Input merge_complex_genotype_vcfs for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "merge_complex_resolve_vcfs": {
+    "description": "Input merge_complex_resolve_vcfs for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "min_sr_background_fail_batches": {
+    "description": "Input min_sr_background_fail_batches for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Float"
+  },
+  "outlier_samples_list": {
+    "description": "Input outlier_samples_list for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "pe_exclude_list": {
+    "description": "Input pe_exclude_list for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "pesr_vcfs": {
+    "description": "Input pesr_vcfs for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "primary_contigs_list": {
+    "description": "Input primary_contigs_list for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "random_seed": {
+    "description": "Input random_seed for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "Int"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta": {
+    "description": "Input reference_fasta for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta_fai": {
+    "description": "Input reference_fasta_fai for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "rf_cutoff_files": {
+    "description": "Input rf_cutoff_files for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "run_module_metrics": {
+    "description": "Input run_module_metrics for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "sample_renaming_tsv": {
+    "description": "Input sample_renaming_tsv for workflow MakeCohortVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "stratification_config_part1": {
+    "description": "Input stratification_config_part1 for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "stratification_config_part2": {
+    "description": "Input stratification_config_part2 for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_qc_docker": {
+    "description": "Input sv_pipeline_qc_docker for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "track_bed_files": {
+    "description": "Input track_bed_files for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "track_names": {
+    "description": "Input track_names for workflow MakeCohortVcf",
+    "optional": false,
+    "type": "Array[String]"
+  }
+}

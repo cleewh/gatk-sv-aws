@@ -1,0 +1,114 @@
+{
+  "records": [
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [
+        "remove_caller: MELT excluded per Req 2a.3 (37 AST removals from upstream WDL)"
+      ],
+      "module": "GatherSampleEvidence",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/GatherSampleEvidence.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "9690943"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [
+        "remove_caller: MELT excluded per Req 2a.3 (4 AST removals from upstream WDL)"
+      ],
+      "module": "GatherBatchEvidence",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/GatherBatchEvidence.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "5772769"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [
+        "remove_caller: MELT excluded per Req 2a.3 (12 AST removals from upstream WDL)"
+      ],
+      "module": "ClusterBatch",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/ClusterBatch.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "6529905"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [
+        "remove_caller: MELT excluded per Req 2a.3 (1 AST removal from upstream WDL)"
+      ],
+      "module": "GenerateBatchMetrics",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/GenerateBatchMetrics.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "5339393"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [
+        "remove_caller: MELT excluded per Req 2a.3 (9 AST removals from upstream WDL)"
+      ],
+      "module": "FilterBatch",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/FilterBatch.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "6118948"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [],
+      "module": "MergeBatchSites",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/MergeBatchSites.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "4087067"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [],
+      "module": "GenotypeBatch",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/GenotypeBatch.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "9542089"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [],
+      "module": "RegenotypeCNVs",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/RegenotypeCNVs.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "6667750"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [],
+      "module": "MakeCohortVcf",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/MakeCohortVcf.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "1027205"
+    },
+    {
+      "container_registry_map_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/container-registry-map.json",
+      "divergences": [],
+      "module": "AnnotateVcf",
+      "parameter_template_uri": "s3://omics-wdl-ap-southeast-1-__ACCOUNT_ID__/parameter-templates/AnnotateVcf.json",
+      "semver": "1.0.0",
+      "upstream_commit": "7eb2af1feea9",
+      "version_name": "default",
+      "workflow_id": "8239108"
+    }
+  ]
+}

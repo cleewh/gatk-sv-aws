@@ -1,0 +1,102 @@
+{
+  "allosomes_list": {
+    "description": "Input allosomes_list for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "contig_list": {
+    "description": "Input contig_list for workflow AnnotateVcf",
+    "optional": false,
+    "type": "File"
+  },
+  "external_af_population": {
+    "description": "Input external_af_population for workflow AnnotateVcf",
+    "optional": true,
+    "type": "Array[String]"
+  },
+  "external_af_ref_bed": {
+    "description": "Input external_af_ref_bed for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "external_af_ref_prefix": {
+    "description": "Input external_af_ref_prefix for workflow AnnotateVcf",
+    "optional": true,
+    "type": "String"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow AnnotateVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "max_breakend_as_cnv_length": {
+    "description": "Input max_breakend_as_cnv_length for workflow AnnotateVcf",
+    "optional": true,
+    "type": "Int"
+  },
+  "noncoding_bed": {
+    "description": "Input noncoding_bed for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "par_bed": {
+    "description": "Input par_bed for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "prefix": {
+    "description": "Input prefix for workflow AnnotateVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "promoter_window": {
+    "description": "Input promoter_window for workflow AnnotateVcf",
+    "optional": true,
+    "type": "Int"
+  },
+  "protein_coding_gtf": {
+    "description": "Input protein_coding_gtf for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "sample_keep_list": {
+    "description": "Input sample_keep_list for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "sample_pop_assignments": {
+    "description": "Input sample_pop_assignments for workflow AnnotateVcf",
+    "optional": true,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow AnnotateVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_per_shard": {
+    "description": "Input sv_per_shard for workflow AnnotateVcf",
+    "optional": false,
+    "type": "Int"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow AnnotateVcf",
+    "optional": false,
+    "type": "String"
+  },
+  "svannotate_additional_args": {
+    "description": "Input svannotate_additional_args for workflow AnnotateVcf",
+    "optional": true,
+    "type": "String"
+  },
+  "vcf": {
+    "description": "Input vcf for workflow AnnotateVcf",
+    "optional": false,
+    "type": "File"
+  }
+}

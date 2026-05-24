@@ -1,0 +1,207 @@
+{
+  "N_IQR_cutoff_plotting": {
+    "description": "Input N_IQR_cutoff_plotting for workflow ClusterBatch",
+    "optional": true,
+    "type": "Int"
+  },
+  "baseline_depth_vcf": {
+    "description": "Input baseline_depth_vcf for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_dragen_vcf": {
+    "description": "Input baseline_dragen_vcf for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_manta_vcf": {
+    "description": "Input baseline_manta_vcf for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_scramble_vcf": {
+    "description": "Input baseline_scramble_vcf for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_wham_vcf": {
+    "description": "Input baseline_wham_vcf for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "batch": {
+    "description": "Input batch for workflow ClusterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "chr_x": {
+    "description": "Input chr_x for workflow ClusterBatch",
+    "optional": true,
+    "type": "String"
+  },
+  "chr_y": {
+    "description": "Input chr_y for workflow ClusterBatch",
+    "optional": true,
+    "type": "String"
+  },
+  "cnv_bed_to_gatk_vcf_script": {
+    "description": "Input cnv_bed_to_gatk_vcf_script for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "contig_list": {
+    "description": "Input contig_list for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "contig_subset_list": {
+    "description": "Input contig_subset_list for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "del_bed": {
+    "description": "Input del_bed for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "depth_clustering_algorithm": {
+    "description": "Input depth_clustering_algorithm for workflow ClusterBatch",
+    "optional": true,
+    "type": "String"
+  },
+  "depth_exclude_intervals": {
+    "description": "Input depth_exclude_intervals for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "depth_exclude_overlap_fraction": {
+    "description": "Input depth_exclude_overlap_fraction for workflow ClusterBatch",
+    "optional": false,
+    "type": "Float"
+  },
+  "depth_interval_overlap": {
+    "description": "Input depth_interval_overlap for workflow ClusterBatch",
+    "optional": false,
+    "type": "Float"
+  },
+  "depth_records_per_bed_shard": {
+    "description": "Input depth_records_per_bed_shard for workflow ClusterBatch",
+    "optional": true,
+    "type": "Int"
+  },
+  "dragen_vcf_tar": {
+    "description": "Input dragen_vcf_tar for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "dup_bed": {
+    "description": "Input dup_bed for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow ClusterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "gatk_to_svtk_script": {
+    "description": "Input gatk_to_svtk_script for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "java_mem_fraction": {
+    "description": "Input java_mem_fraction for workflow ClusterBatch",
+    "optional": true,
+    "type": "Float"
+  },
+  "linux_docker": {
+    "description": "Input linux_docker for workflow ClusterBatch",
+    "optional": true,
+    "type": "String"
+  },
+  "manta_vcf_tar": {
+    "description": "Input manta_vcf_tar for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "pesr_breakend_window": {
+    "description": "Input pesr_breakend_window for workflow ClusterBatch",
+    "optional": false,
+    "type": "Int"
+  },
+  "pesr_clustering_algorithm": {
+    "description": "Input pesr_clustering_algorithm for workflow ClusterBatch",
+    "optional": true,
+    "type": "String"
+  },
+  "pesr_exclude_intervals": {
+    "description": "Input pesr_exclude_intervals for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "pesr_interval_overlap": {
+    "description": "Input pesr_interval_overlap for workflow ClusterBatch",
+    "optional": false,
+    "type": "Float"
+  },
+  "pesr_min_size": {
+    "description": "Input pesr_min_size for workflow ClusterBatch",
+    "optional": true,
+    "type": "Int"
+  },
+  "ploidy_table_script": {
+    "description": "Input ploidy_table_script for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta": {
+    "description": "Input reference_fasta for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta_fai": {
+    "description": "Input reference_fasta_fai for workflow ClusterBatch",
+    "optional": false,
+    "type": "File"
+  },
+  "run_module_metrics": {
+    "description": "Input run_module_metrics for workflow ClusterBatch",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "scramble_vcf_tar": {
+    "description": "Input scramble_vcf_tar for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow ClusterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow ClusterBatch",
+    "optional": false,
+    "type": "String"
+  },
+  "svtk_to_gatk_script": {
+    "description": "Input svtk_to_gatk_script for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  },
+  "wham_vcf_tar": {
+    "description": "Input wham_vcf_tar for workflow ClusterBatch",
+    "optional": true,
+    "type": "File"
+  }
+}

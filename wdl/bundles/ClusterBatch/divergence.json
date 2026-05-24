@@ -1,0 +1,14 @@
+[
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (input_paths: 'melt')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcf_tar')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'baseline_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'runtime_attr_svcluster_melt')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_conditional: 'defined(melt_vcf_tar)')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'clustered_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'clustered_melt_vcf_index')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatchMetrics.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (input_paths: 'melt_clustered')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatchMetrics.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatchMetrics.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'baseline_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatchMetrics.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'runtime_attr_melt_metrics')","upstream_commit":"7eb2af1feea9"},
+  {"module":"ClusterBatch","upstream_path":"wdl/ClusterBatchMetrics.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_conditional: 'defined(melt_vcf)')","upstream_commit":"7eb2af1feea9"}
+]

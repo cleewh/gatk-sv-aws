@@ -1,0 +1,142 @@
+{
+  "additional_gatk_args_agg_depth": {
+    "description": "Input additional_gatk_args_agg_depth for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "String"
+  },
+  "additional_gatk_args_agg_pesr": {
+    "description": "Input additional_gatk_args_agg_pesr for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "String"
+  },
+  "baf_file": {
+    "description": "Input baf_file for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "batch": {
+    "description": "Input batch for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "String"
+  },
+  "chr_x": {
+    "description": "Input chr_x for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "String"
+  },
+  "chr_y": {
+    "description": "Input chr_y for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "String"
+  },
+  "depth_vcf": {
+    "description": "Input depth_vcf for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  },
+  "dragen_vcf": {
+    "description": "Input dragen_vcf for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "String"
+  },
+  "java_mem_fraction": {
+    "description": "Input java_mem_fraction for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "Float"
+  },
+  "manta_vcf": {
+    "description": "Input manta_vcf for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  },
+  "median_file": {
+    "description": "Input median_file for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "outlier_sample_ids": {
+    "description": "Input outlier_sample_ids for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  },
+  "pe_file": {
+    "description": "Input pe_file for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "primary_contigs_list": {
+    "description": "Input primary_contigs_list for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "rd_file": {
+    "description": "Input rd_file for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "records_per_shard_agg": {
+    "description": "Input records_per_shard_agg for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "Int"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "rmsk": {
+    "description": "Input rmsk for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "run_module_metrics": {
+    "description": "Input run_module_metrics for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "scramble_vcf": {
+    "description": "Input scramble_vcf for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  },
+  "segdups": {
+    "description": "Input segdups for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "sr_file": {
+    "description": "Input sr_file for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow GenerateBatchMetrics",
+    "optional": false,
+    "type": "String"
+  },
+  "svtk_to_gatk_script": {
+    "description": "Input svtk_to_gatk_script for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  },
+  "wham_vcf": {
+    "description": "Input wham_vcf for workflow GenerateBatchMetrics",
+    "optional": true,
+    "type": "File"
+  }
+}

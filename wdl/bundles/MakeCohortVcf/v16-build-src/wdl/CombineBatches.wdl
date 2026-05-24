@@ -1,0 +1,549 @@
+version 1.0
+
+import "CombineSRBothsidePass.wdl" as CombineSRBothsidePassWorkflow
+import "FormatVcfForGatk.wdl" as GatkFormatting
+import "TasksClusterBatch.wdl" as ClusterTasks
+import "TasksGenotypeBatch.wdl" as GenotypeTasks
+import "TasksMakeCohortVcf.wdl" as MiniTasks
+
+workflow CombineBatches {
+  input {
+    String cohort_name
+    Array[String] batches
+    File ped_file
+
+    Boolean merge_vcfs = false
+
+    Array[File] pesr_vcfs
+    Array[File] depth_vcfs
+
+    File contig_list
+    Float min_sr_background_fail_batches
+
+    # Reclustering parameters
+    File clustering_config_part1
+    File stratification_config_part1
+    File clustering_config_part2
+    File stratification_config_part2
+    # These arrays give the names and intervals for reference contexts for stratification (same lengths)
+    # Names must correspond to those in the stratification config files
+    Array[String] track_names
+    File track_bed_tarball
+
+    File reference_fasta
+    File reference_fasta_fai
+    File reference_dict
+    String? chr_x
+    String? chr_y
+
+    Float? java_mem_fraction
+
+    String gatk_docker
+    String sv_base_mini_docker
+    String sv_pipeline_docker
+
+    RuntimeAttr? runtime_attr_create_ploidy
+    RuntimeAttr? runtime_attr_set_sr_flags
+    RuntimeAttr? runtime_attr_join_vcfs
+    RuntimeAttr? runtime_attr_cluster_sites
+    RuntimeAttr? runtime_attr_recluster_part1
+    RuntimeAttr? runtime_attr_recluster_part2
+    RuntimeAttr? runtime_attr_get_non_ref_vids
+    RuntimeAttr? runtime_attr_calculate_support_frac
+    RuntimeAttr? runtime_override_clean_background_fail
+    RuntimeAttr? runtime_attr_gatk_to_svtk_vcf
+    RuntimeAttr? runtime_attr_extract_vids_1
+    RuntimeAttr? runtime_attr_extract_vids_2
+    RuntimeAttr? runtime_override_concat
+  }
+
+  # Get SR evidence flags from input PESR VCFs
+  scatter (i in range(length(pesr_vcfs))) {
+    call ExtractSRVariantLists as ExtractBatchSrVariantLists {
+      input:
+        vcf=pesr_vcfs[i],
+        vcf_index=pesr_vcfs[i] + ".tbi",
+        output_prefix="~{cohort_name}.batch_~{i}",
+        sv_base_mini_docker=sv_base_mini_docker,
+        runtime_attr_override=runtime_attr_extract_vids_1
+    }
+  }
+
+  # Combine BOTHSIDES_SUPPORT flags across batches
+  call CombineSRBothsidePassWorkflow.CombineSRBothsidePass {
+    input:
+      pesr_vcfs=pesr_vcfs,
+      raw_sr_bothside_pass_files=ExtractBatchSrVariantLists.bothsides_sr_support,
+      prefix="~{cohort_name}.sr_bothside_pass",
+      sv_base_mini_docker=sv_base_mini_docker,
+      sv_pipeline_docker=sv_pipeline_docker,
+      runtime_attr_get_non_ref_vids=runtime_attr_get_non_ref_vids,
+      runtime_attr_calculate_support_frac=runtime_attr_calculate_support_frac
+  }
+
+  # Combine HIGH_SR_BACKGROUND flags across batches
+  Float min_background_fail_first_col = min_sr_background_fail_batches * length(pesr_vcfs)
+  call MiniTasks.CatUncompressedFiles as CombineBackgroundFail {
+    input:
+      shards=ExtractBatchSrVariantLists.high_sr_background_list,
+      filter_command="sort | uniq -c | awk -v OFS='\\t' '{if($1 >= ~{min_background_fail_first_col}) print $2}'",
+      outfile_name="~{cohort_name}.background_fail.txt",
+      sv_base_mini_docker=sv_base_mini_docker,
+      runtime_attr_override=runtime_override_clean_background_fail
+  }
+
+  # Resets SR flags in input PESR VCFs based on cohort-level calculations
+  scatter (i in range(length(pesr_vcfs))) {
+    call SetSRVariantFlags {
+      input:
+        vcf=pesr_vcfs[i],
+        bothside_pass_list=CombineSRBothsidePass.out,
+        background_fail_list=CombineBackgroundFail.outfile,
+        output_prefix="~{cohort_name}.pesr.batch_~{i}.sr_flagged",
+        sv_pipeline_docker=sv_pipeline_docker,
+        runtime_attr_override=runtime_attr_set_sr_flags
+    }
+  }
+
+  call ClusterTasks.CreatePloidyTableFromPed {
+    input:
+      ped_file=ped_file,
+      contig_list=contig_list,
+      retain_female_chr_y=true,
+      chr_x=chr_x,
+      chr_y=chr_y,
+      output_prefix="~{cohort_name}.ploidy",
+      sv_pipeline_docker=sv_pipeline_docker,
+      runtime_attr_override=runtime_attr_create_ploidy
+  }
+
+  #Scatter per chromosome
+  Array[String] contigs = transpose(read_tsv(contig_list))[0]
+  scatter ( contig in contigs ) {
+
+    # Naively join across batches
+    call ClusterTasks.SVCluster as JoinVcfs {
+      input:
+        vcfs=flatten([SetSRVariantFlags.out, depth_vcfs]),
+        ploidy_table=CreatePloidyTableFromPed.out,
+        output_prefix="~{cohort_name}.combine_batches.~{contig}.join_vcfs",
+        contig=contig,
+        fast_mode=false,
+        pesr_sample_overlap=0,
+        pesr_interval_overlap=1,
+        pesr_breakend_window=0,
+        depth_sample_overlap=0,
+        depth_interval_overlap=1,
+        depth_breakend_window=0,
+        mixed_sample_overlap=0,
+        mixed_interval_overlap=1,
+        mixed_breakend_window=0,
+        reference_fasta=reference_fasta,
+        reference_fasta_fai=reference_fasta_fai,
+        reference_dict=reference_dict,
+        java_mem_fraction=java_mem_fraction,
+        gatk_docker=gatk_docker,
+        runtime_attr_override=runtime_attr_join_vcfs
+    }
+
+    # Combined: ClusterSites + GroupedSVClusterPart1 + GroupedSVClusterPart2
+    # (Combined into single task to avoid HealthOmics FUSE I/O issues with intermediate VCFs)
+    call ClusterSitesAndGroupedCluster {
+      input:
+        vcf=JoinVcfs.out,
+        ploidy_table=CreatePloidyTableFromPed.out,
+        output_prefix="~{cohort_name}.combine_batches.~{contig}",
+        contig=contig,
+        cohort_name=cohort_name,
+        reference_fasta=reference_fasta,
+        reference_fasta_fai=reference_fasta_fai,
+        reference_dict=reference_dict,
+        clustering_config_part1=clustering_config_part1,
+        stratification_config_part1=stratification_config_part1,
+        clustering_config_part2=clustering_config_part2,
+        stratification_config_part2=stratification_config_part2,
+        track_bed_tarball=track_bed_tarball,
+        track_names=track_names,
+        java_mem_fraction=java_mem_fraction,
+        gatk_docker=gatk_docker,
+        runtime_attr_override=runtime_attr_recluster_part2
+    }
+
+    # Use "depth" as source to match legacy headers
+    # AC/AF cause errors due to being lists instead of single values
+    call ClusterTasks.GatkToSvtkVcf {
+      input:
+        vcf=ClusterSitesAndGroupedCluster.out,
+        output_prefix="~{cohort_name}.combine_batches.~{contig}.svtk_formatted",
+        source="depth",
+        contig_list=contig_list,
+        remove_formats="CN,RD_MCR",
+        remove_infos="AC,AF,AN,HIGH_SR_BACKGROUND,BOTHSIDES_SUPPORT,SR1POS,SR2POS",
+        set_pass=true,
+        sv_pipeline_docker=sv_pipeline_docker,
+        runtime_attr_override=runtime_attr_gatk_to_svtk_vcf
+    }
+
+    call ExtractSRVariantLists {
+      input:
+        vcf=ClusterSitesAndGroupedCluster.out,
+        vcf_index=ClusterSitesAndGroupedCluster.out_index,
+        output_prefix="~{cohort_name}.combine_batches.~{contig}",
+        sv_base_mini_docker=sv_base_mini_docker,
+        runtime_attr_override=runtime_attr_extract_vids_2
+    }
+  }
+
+  # Merge resolved vcfs for QC
+  if (merge_vcfs) {
+    call MiniTasks.ConcatVcfs {
+      input:
+        vcfs=GatkToSvtkVcf.out,
+        vcfs_idx=GatkToSvtkVcf.out_index,
+        naive=true,
+        outfile_prefix="~{cohort_name}.combine_batches.concat_all_contigs",
+        sv_base_mini_docker=sv_base_mini_docker,
+        runtime_attr_override=runtime_override_concat
+    }
+  }
+
+  #Final outputs
+  output {
+    Array[File] combined_vcfs = GatkToSvtkVcf.out
+    Array[File] combined_vcf_indexes = GatkToSvtkVcf.out_index
+    Array[File] cluster_background_fail_lists = ExtractSRVariantLists.high_sr_background_list
+    Array[File] cluster_bothside_pass_lists = ExtractSRVariantLists.bothsides_sr_support
+    File? combine_batches_merged_vcf = ConcatVcfs.concat_vcf
+    File? combine_batches_merged_vcf_index = ConcatVcfs.concat_vcf_idx
+  }
+}
+
+
+# Find intersection of Variant IDs from vid_list with those present in vcf, return as filtered_vid_list
+task ExtractSRVariantLists {
+  input {
+    File vcf
+    File vcf_index
+    String output_prefix
+    String sv_base_mini_docker
+    RuntimeAttr? runtime_attr_override
+  }
+
+  # when filtering/sorting/etc, memory usage will likely go up (much of the data will have to
+  # be held in memory or disk while working, potentially in a form that takes up more space)
+  RuntimeAttr runtime_default = object {
+                                  mem_gb: 3.75,
+                                  disk_gb: ceil(10.0 + size(vcf, "GB")),
+                                  cpu_cores: 1,
+                                  preemptible_tries: 3,
+                                  max_retries: 1,
+                                  boot_disk_gb: 10
+                                }
+  RuntimeAttr runtime_override = select_first([runtime_attr_override, runtime_default])
+  runtime {
+    memory: select_first([runtime_override.mem_gb, runtime_default.mem_gb]) + " GB"
+    disks: "local-disk " + select_first([runtime_override.disk_gb, runtime_default.disk_gb]) + " HDD"
+    cpu: select_first([runtime_override.cpu_cores, runtime_default.cpu_cores])
+    preemptible: select_first([runtime_override.preemptible_tries, runtime_default.preemptible_tries])
+    maxRetries: select_first([runtime_override.max_retries, runtime_default.max_retries])
+    docker: sv_base_mini_docker
+    bootDiskSizeGb: select_first([runtime_override.boot_disk_gb, runtime_default.boot_disk_gb])
+  }
+
+  command <<<
+    set -euo pipefail
+    bcftools query -f '%ID\t%HIGH_SR_BACKGROUND\t%BOTHSIDES_SUPPORT\n' ~{vcf} > flags.txt
+    awk -F'\t' '($2 != "."){print $1}' flags.txt > ~{output_prefix}.high_sr_background.txt
+    awk -F'\t' '($3 != "."){print $1}' flags.txt > ~{output_prefix}.bothsides_sr_support.txt
+  >>>
+
+  output {
+    File high_sr_background_list = "~{output_prefix}.high_sr_background.txt"
+    File bothsides_sr_support = "~{output_prefix}.bothsides_sr_support.txt"
+  }
+}
+
+task GroupedSVClusterTask {
+  input {
+    File vcf
+    File ploidy_table
+    String output_prefix
+
+    File reference_fasta
+    File reference_fasta_fai
+    File reference_dict
+
+    File clustering_config
+    File stratification_config
+    File track_bed_tarball
+    Array[String] track_names
+
+    Float context_overlap_frac = 0
+    Int context_num_breakpoint_overlaps = 1
+    Int context_interchrom_num_breakpoint_overlaps = 1
+
+    String? breakpoint_summary_strategy
+    String? contig
+    String? additional_args
+
+    Float? java_mem_fraction
+    String gatk_docker
+    RuntimeAttr? runtime_attr_override
+  }
+
+
+
+
+  RuntimeAttr default_attr = object {
+                               cpu_cores: 4,
+                               mem_gb: 8,
+                               disk_gb: 100,
+                               boot_disk_gb: 10,
+                               preemptible_tries: 3,
+                               max_retries: 1
+                             }
+  RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
+
+  output {
+    File out = "~{output_prefix}.vcf.gz"
+    File out_index = "~{output_prefix}.vcf.gz.tbi"
+  }
+  command <<<
+    set -euo pipefail
+
+    function getJavaMem() {
+    # get JVM memory in MiB by getting total memory from /proc/meminfo
+    # and multiplying by java_mem_fraction
+    cat /proc/meminfo \
+      | awk -v MEM_FIELD="$1" '{
+        f[substr($1, 1, length($1)-1)] = $2
+      } END {
+        printf "%dM", f[MEM_FIELD] * ~{default="0.85" java_mem_fraction} / 1024
+      }'
+    }
+    JVM_MAX_MEM=$(getJavaMem MemTotal)
+    echo "JVM memory: $JVM_MAX_MEM"
+
+
+
+    # Extract bundled track files (HealthOmics workaround for Array[File] localization issue)
+    mkdir -p track_files
+    tar xzf ~{track_bed_tarball} -C track_files/
+    ls -la track_files/
+
+    # Build --track-intervals args from track_names
+    TRACK_ARGS=""
+    for name in ~{sep=" " track_names}; do
+        TRACK_ARGS="$TRACK_ARGS --track-intervals track_files/track.${name}.bed.gz --track-name ${name}"
+    done
+    echo "Track arguments: $TRACK_ARGS"
+
+    gatk --java-options "-Xmx${JVM_MAX_MEM}" GroupedSVCluster \
+      ~{"-L " + contig} \
+      --reference ~{reference_fasta} \
+      --ploidy-table ~{ploidy_table} \
+      -V ~{vcf} \
+      -O ~{output_prefix}.vcf.gz \
+      --clustering-config ~{clustering_config} \
+      --stratify-config ~{stratification_config} \
+      $TRACK_ARGS \
+      --stratify-overlap-fraction ~{context_overlap_frac} \
+      --stratify-num-breakpoint-overlaps ~{context_num_breakpoint_overlaps} \
+      --stratify-num-breakpoint-overlaps-interchromosomal ~{context_interchrom_num_breakpoint_overlaps} \
+      ~{"--breakpoint-summary-strategy " + breakpoint_summary_strategy} \
+      ~{additional_args}
+  >>>
+  runtime {
+    cpu: select_first([runtime_attr.cpu_cores, default_attr.cpu_cores])
+    memory: select_first([runtime_attr.mem_gb, default_attr.mem_gb]) + " GiB"
+    disks: "local-disk " + select_first([runtime_attr.disk_gb, default_attr.disk_gb]) + " HDD"
+    bootDiskSizeGb: select_first([runtime_attr.boot_disk_gb, default_attr.boot_disk_gb])
+    docker: gatk_docker
+    preemptible: select_first([runtime_attr.preemptible_tries, default_attr.preemptible_tries])
+    maxRetries: select_first([runtime_attr.max_retries, default_attr.max_retries])
+  }
+}
+
+# Set BOTHSIDES_SUPPORT and HIGH_SR_BACKGROUND INFO field flags in a VCF based on input vid lists
+task SetSRVariantFlags {
+  input {
+      File vcf
+      File bothside_pass_list
+      File background_fail_list
+      String output_prefix
+      String sv_pipeline_docker
+      RuntimeAttr? runtime_attr_override
+      }
+  RuntimeAttr default_attr = object {
+                               cpu_cores: 1,
+                               mem_gb: 3.75,
+                               disk_gb: ceil(50 + size(vcf, "GB") * 3),
+                               boot_disk_gb: 10,
+                               preemptible_tries: 3,
+                               max_retries: 1
+                             }
+  RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
+
+  output {
+      File out = "~{output_prefix}.vcf.gz"
+      File out_index = "~{output_prefix}.vcf.gz.tbi"
+  }
+  command <<<
+      set -euo pipefail
+      python /opt/sv-pipeline/scripts/add_sr_info_flags.py \
+        --vcf ~{vcf} \
+        --out ~{output_prefix}.vcf.gz \
+        --bothsides-support-list ~{bothside_pass_list} \
+        --high-sr-background-list ~{background_fail_list}
+      tabix ~{output_prefix}.vcf.gz
+  >>>
+  runtime {
+    cpu: select_first([runtime_attr.cpu_cores, default_attr.cpu_cores])
+    memory: select_first([runtime_attr.mem_gb, default_attr.mem_gb]) + " GiB"
+    disks: "local-disk " + select_first([runtime_attr.disk_gb, default_attr.disk_gb]) + " HDD"
+    bootDiskSizeGb: select_first([runtime_attr.boot_disk_gb, default_attr.boot_disk_gb])
+    docker: sv_pipeline_docker
+    preemptible: select_first([runtime_attr.preemptible_tries, default_attr.preemptible_tries])
+    maxRetries: select_first([runtime_attr.max_retries, default_attr.max_retries])
+  }
+}
+
+task ClusterSitesAndGroupedCluster {
+  input {
+    File vcf
+    File ploidy_table
+    String output_prefix
+    String? contig
+    String cohort_name
+
+    File reference_fasta
+    File reference_fasta_fai
+    File reference_dict
+
+    File clustering_config_part1
+    File stratification_config_part1
+    File clustering_config_part2
+    File stratification_config_part2
+    File track_bed_tarball
+    Array[String] track_names
+
+    Float? java_mem_fraction
+    String gatk_docker
+    RuntimeAttr? runtime_attr_override
+  }
+
+  RuntimeAttr default_attr = object {
+                               cpu_cores: 4,
+                               mem_gb: 16,
+                               disk_gb: 100,
+                               boot_disk_gb: 10,
+                               preemptible_tries: 3,
+                               max_retries: 1
+                             }
+  RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
+
+  output {
+    File out = "~{output_prefix}.recluster_part_2.vcf.gz"
+    File out_index = "~{output_prefix}.recluster_part_2.vcf.gz.tbi"
+  }
+
+  command <<<
+    set -euxo pipefail
+
+    function getJavaMem() {
+      cat /proc/meminfo \
+        | awk -v MEM_FIELD="$1" '{
+            f[substr($1, 1, length($1)-1)] = $2
+          } END {
+            printf "%dM", f[MEM_FIELD] * ~{default="0.50" java_mem_fraction} / 1024
+          }'
+    }
+    JVM_MAX_MEM=$(getJavaMem MemTotal)
+    echo "JVM memory: $JVM_MAX_MEM"
+    echo "DIAG start: $(date -u +%H:%M:%S.%N)"
+
+    # Extract bundled track files locally
+    mkdir -p track_files
+    tar xzf ~{track_bed_tarball} -C track_files/
+    ls -la track_files/
+
+    # Build --track-intervals args from track_names
+    TRACK_ARGS=""
+    for name in ~{sep=" " track_names}; do
+        TRACK_ARGS="$TRACK_ARGS --track-intervals track_files/track.${name}.bed.gz --track-name ${name}"
+    done
+    echo "Track arguments: $TRACK_ARGS"
+
+    # ===== Step 1: ClusterSites (SVCluster, first round of clustering) =====
+    # NOTE: Upstream does NOT pass -L to ClusterSites; the input VCF is already contig-restricted.
+    echo "DIAG ClusterSites start: $(date -u +%H:%M:%S.%N)"
+    awk '{print "-V "$0}' <<EOF > cluster_sites.args
+~{vcf}
+EOF
+    gatk --java-options "-Xmx${JVM_MAX_MEM}" SVCluster \
+      --arguments_file cluster_sites.args \
+      --output ~{output_prefix}.cluster_sites.vcf.gz \
+      --reference ~{reference_fasta} \
+      --ploidy-table ~{ploidy_table} \
+      --breakpoint-summary-strategy REPRESENTATIVE \
+      --variant-prefix "~{cohort_name}_~{contig}_" \
+      --pesr-sample-overlap 0.5 \
+      --pesr-interval-overlap 0.1 \
+      --pesr-breakend-window 300 \
+      --depth-sample-overlap 0.5 \
+      --depth-interval-overlap 0.5 \
+      --depth-breakend-window 500000 \
+      --mixed-sample-overlap 0.5 \
+      --mixed-interval-overlap 0.5 \
+      --mixed-breakend-window 1000000
+
+    ls -la ~{output_prefix}.cluster_sites.vcf.gz*
+
+    # ===== Step 2: GroupedSVClusterPart1 =====
+    # NOTE: Upstream does NOT pass contig (-L) to GroupedSVClusterPart1.
+    echo "DIAG GroupedSVClusterPart1 start: $(date -u +%H:%M:%S.%N)"
+    gatk --java-options "-Xmx${JVM_MAX_MEM}" GroupedSVCluster \
+      --reference ~{reference_fasta} \
+      --ploidy-table ~{ploidy_table} \
+      -V ~{output_prefix}.cluster_sites.vcf.gz \
+      -O ~{output_prefix}.recluster_part_1.vcf.gz \
+      --clustering-config ~{clustering_config_part1} \
+      --stratify-config ~{stratification_config_part1} \
+      $TRACK_ARGS \
+      --stratify-overlap-fraction 0 \
+      --stratify-num-breakpoint-overlaps 1 \
+      --stratify-num-breakpoint-overlaps-interchromosomal 1 \
+      --breakpoint-summary-strategy REPRESENTATIVE
+
+    ls -la ~{output_prefix}.recluster_part_1.vcf.gz*
+
+    # ===== Step 3: GroupedSVClusterPart2 =====
+    # NOTE: Upstream does NOT pass contig (-L) to GroupedSVClusterPart2.
+    echo "DIAG GroupedSVClusterPart2 start: $(date -u +%H:%M:%S.%N)"
+    gatk --java-options "-Xmx${JVM_MAX_MEM}" GroupedSVCluster \
+      --reference ~{reference_fasta} \
+      --ploidy-table ~{ploidy_table} \
+      -V ~{output_prefix}.recluster_part_1.vcf.gz \
+      -O ~{output_prefix}.recluster_part_2.vcf.gz \
+      --clustering-config ~{clustering_config_part2} \
+      --stratify-config ~{stratification_config_part2} \
+      $TRACK_ARGS \
+      --stratify-overlap-fraction 0 \
+      --stratify-num-breakpoint-overlaps 1 \
+      --stratify-num-breakpoint-overlaps-interchromosomal 1 \
+      --breakpoint-summary-strategy REPRESENTATIVE
+
+    ls -la ~{output_prefix}.recluster_part_2.vcf.gz*
+    echo "DIAG done: $(date -u +%H:%M:%S.%N)"
+  >>>
+  runtime {
+    cpu: select_first([runtime_attr.cpu_cores, default_attr.cpu_cores])
+    memory: select_first([runtime_attr.mem_gb, default_attr.mem_gb]) + " GiB"
+    disks: "local-disk " + select_first([runtime_attr.disk_gb, default_attr.disk_gb]) + " HDD"
+    bootDiskSizeGb: select_first([runtime_attr.boot_disk_gb, default_attr.boot_disk_gb])
+    docker: gatk_docker
+    preemptible: select_first([runtime_attr.preemptible_tries, default_attr.preemptible_tries])
+    maxRetries: select_first([runtime_attr.max_retries, default_attr.max_retries])
+  }
+}
+

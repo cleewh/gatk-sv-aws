@@ -1,0 +1,307 @@
+{
+  "NONE_FILE_": {
+    "description": "Input NONE_FILE_ for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "NONE_FLOAT_": {
+    "description": "Input NONE_FLOAT_ for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "NONE_INT_": {
+    "description": "Input NONE_INT_ for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "bam_or_cram_file": {
+    "description": "Input bam_or_cram_file for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "bam_or_cram_index": {
+    "description": "Input bam_or_cram_index for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_manta_vcf": {
+    "description": "Input baseline_manta_vcf for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_scramble_vcf": {
+    "description": "Input baseline_scramble_vcf for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "baseline_wham_vcf": {
+    "description": "Input baseline_wham_vcf for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "cloud_sdk_docker": {
+    "description": "Input cloud_sdk_docker for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "collect_coverage": {
+    "description": "Input collect_coverage for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "collect_pesr": {
+    "description": "Input collect_pesr for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "coverage": {
+    "description": "Input coverage for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "disk_space_gb_for_collect_counts": {
+    "description": "Input disk_space_gb_for_collect_counts for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "dragen_vcf": {
+    "description": "Input dragen_vcf for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "genomes_in_the_cloud_docker": {
+    "description": "Input genomes_in_the_cloud_docker for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "insert_size": {
+    "description": "Input insert_size for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "is_dragen_3_7_8": {
+    "description": "Input is_dragen_3_7_8 for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "manta_docker": {
+    "description": "Input manta_docker for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "String"
+  },
+  "manta_jobs_per_cpu": {
+    "description": "Input manta_jobs_per_cpu for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "manta_mem_gb_per_job": {
+    "description": "Input manta_mem_gb_per_job for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "manta_region_bed": {
+    "description": "Input manta_region_bed for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "manta_region_bed_index": {
+    "description": "Input manta_region_bed_index for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "manta_vcf_index_input": {
+    "description": "Input manta_vcf_index_input for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "manta_vcf_input": {
+    "description": "Input manta_vcf_input for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "mei_bed": {
+    "description": "Input mei_bed for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "mem_gb_for_collect_counts": {
+    "description": "Input mem_gb_for_collect_counts for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "metrics_intervals": {
+    "description": "Input metrics_intervals for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "move_bam_or_cram_files": {
+    "description": "Input move_bam_or_cram_files for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "pct_chimeras": {
+    "description": "Input pct_chimeras for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "pf_reads_improper_pairs": {
+    "description": "Input pf_reads_improper_pairs for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "preprocessed_intervals": {
+    "description": "Input preprocessed_intervals for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "primary_contigs_fai": {
+    "description": "Input primary_contigs_fai for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "primary_contigs_list": {
+    "description": "Input primary_contigs_list for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "read_length": {
+    "description": "Input read_length for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "reference_bwa_alt": {
+    "description": "Input reference_bwa_alt for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_bwa_amb": {
+    "description": "Input reference_bwa_amb for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_bwa_ann": {
+    "description": "Input reference_bwa_ann for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_bwa_bwt": {
+    "description": "Input reference_bwa_bwt for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_bwa_pac": {
+    "description": "Input reference_bwa_pac for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_bwa_sa": {
+    "description": "Input reference_bwa_sa for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta": {
+    "description": "Input reference_fasta for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_index": {
+    "description": "Input reference_index for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_version": {
+    "description": "Input reference_version for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "String"
+  },
+  "run_localize_reads": {
+    "description": "Input run_localize_reads for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "run_module_metrics": {
+    "description": "Input run_module_metrics for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "sample_id": {
+    "description": "Input sample_id for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "samtools_cloud_docker": {
+    "description": "Input samtools_cloud_docker for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "scramble_alignment_score_cutoff": {
+    "description": "Input scramble_alignment_score_cutoff for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "scramble_docker": {
+    "description": "Input scramble_docker for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "String"
+  },
+  "scramble_min_clipped_reads_fraction": {
+    "description": "Input scramble_min_clipped_reads_fraction for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "scramble_part2_threads": {
+    "description": "Input scramble_part2_threads for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "scramble_percent_align_cutoff": {
+    "description": "Input scramble_percent_align_cutoff for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Int"
+  },
+  "scramble_vcf_script": {
+    "description": "Input scramble_vcf_script for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "File"
+  },
+  "sd_locs_vcf": {
+    "description": "Input sd_locs_vcf for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "String"
+  },
+  "total_reads": {
+    "description": "Input total_reads for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "Float"
+  },
+  "wham_docker": {
+    "description": "Input wham_docker for workflow GatherSampleEvidence",
+    "optional": true,
+    "type": "String"
+  },
+  "wham_include_list_bed_file": {
+    "description": "Input wham_include_list_bed_file for workflow GatherSampleEvidence",
+    "optional": false,
+    "type": "File"
+  }
+}

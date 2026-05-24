@@ -1,0 +1,35 @@
+{
+  "build": "GRCh37",
+  "source_pipeline": "broadinstitute/gatk-sv@7eb2af1feea9",
+  "notes": [
+    "GRCh37 is OPTIONAL (Req 5.6). GRCh38 is the default.",
+    "Upstream GATK-SV includes GRCh37 inputs as a compatibility layer; the",
+    "Validation Harness acceptance tests in Phase 6 exercise GRCh38 only.",
+    "When expected_md5 and expected_sha256 are both null, the stager skips",
+    "checksum verification. Fill them in after the first successful stage",
+    "to pin regression behavior."
+  ],
+  "files": [
+    {
+      "logical_name": "Homo_sapiens_assembly19.fasta",
+      "source_uri": "s3://broad-references/hg19/v0/Homo_sapiens_assembly19.fasta",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly19.fasta.fai",
+      "source_uri": "s3://broad-references/hg19/v0/Homo_sapiens_assembly19.fasta.fai",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    },
+    {
+      "logical_name": "Homo_sapiens_assembly19.dict",
+      "source_uri": "s3://broad-references/hg19/v0/Homo_sapiens_assembly19.dict",
+      "expected_md5": null,
+      "expected_sha256": null,
+      "size_bytes": null
+    }
+  ]
+}

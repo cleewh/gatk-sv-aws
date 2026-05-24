@@ -1,0 +1,51 @@
+{
+  "deployment_time": "2026-05-19T15:45:00Z",
+  "sample": "NA12878",
+  "runs": {
+    "CollectCounts": {
+      "run_id": "8659560",
+      "workflow_id": "8771956",
+      "workflow_name": "gatk-sv-collect-counts-opt",
+      "storage_type": "DYNAMIC",
+      "resources": {"memory": "8 GiB", "cpu": 4}
+    },
+    "CollectSVEvidence": {
+      "run_id": "9196920",
+      "workflow_id": "9401525",
+      "workflow_name": "gatk-sv-collect-sv-evidence-opt-v2",
+      "storage_type": "DYNAMIC",
+      "resources": {"memory": "8 GiB", "cpu": 4}
+    },
+    "Manta": {
+      "run_id": "8688241",
+      "workflow_id": "4091926",
+      "workflow_name": "gatk-sv-manta-opt-v2",
+      "storage_type": "STATIC",
+      "storage_capacity_gib": 1200,
+      "resources": {"memory": "16 GiB", "cpu": 16}
+    },
+    "Scramble": {
+      "run_id": "3286866",
+      "workflow_id": "7198404",
+      "workflow_name": "gatk-sv-scramble-final-v2",
+      "storage_type": "STATIC",
+      "storage_capacity_gib": 1200,
+      "resources": {"memory": "8 GiB", "cpu": 16}
+    },
+    "Wham": {
+      "run_id": "4221098",
+      "workflow_id": "2723477",
+      "workflow_name": "gatk-sv-wham-fast-v2",
+      "storage_type": "STATIC",
+      "storage_capacity_gib": 1200,
+      "resources": {"memory": "16 GiB", "cpu": 16}
+    }
+  },
+  "previous_results": {
+    "CollectCounts": {"runtime_min": "84-92"},
+    "CollectSVEvidence": {"runtime_min": "95-101"},
+    "Manta": {"runtime_min": "77"},
+    "Scramble": {"runtime_min": "25-30"},
+    "Wham": {"runtime_min": "17", "calls": 6985, "cost_usd": 0.50}
+  }
+}

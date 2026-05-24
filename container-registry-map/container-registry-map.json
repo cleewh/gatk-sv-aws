@@ -1,0 +1,66 @@
+{
+  "registryMappings": [
+    {
+      "upstreamRegistryUrl": "public.ecr.aws",
+      "ecrRepositoryPrefix": "ecr-public"
+    },
+    {
+      "upstreamRegistryUrl": "quay.io",
+      "ecrRepositoryPrefix": "quay"
+    }
+  ],
+  "imageMappings": [
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-base-mini:2024-10-25-v0.29-beta-5ea22a52",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/sv-base-mini:2024-10-25-v0.29-beta-5ea22a52"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-base:2024-10-25-v0.29-beta-5ea22a52",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/sv-base:2024-10-25-v0.29-beta-5ea22a52"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-utils:2025-01-06-v1.0.1-e902bf4e",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/sv-utils:2025-01-06-v1.0.1-e902bf4e"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/manta:2023-09-14-v0.28.3-beta-3f22f94d",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/manta:2023-09-14-v0.28.3-beta-3f22f94d"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/scramble:2024-10-25-v0.29-beta-5ea22a52",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/scramble:2024-10-25-v0.29-beta-5ea22a52"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/samtools-cloud:2024-10-25-v0.29-beta-5ea22a52",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/samtools-cloud:2024-10-25-v0.29-beta-5ea22a52"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/gatk:mw-gatk-sv-672d85",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/gatk:mw-gatk-sv-672d85"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/cnmops:2025-09-02-v1.0.5-f091af0b",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/cnmops:2025-09-02-v1.0.5-f091af0b"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-dsde-methods/gatk-sv/stripy:2025-11-14-v1.1-7b56c3ac",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/stripy:2025-11-14-v1.1-7b56c3ac"
+    },
+    {
+      "sourceImage": "us.gcr.io/broad-gotc-prod/genomes-in-the-cloud:2.3.2-1510681135",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/genomes-in-the-cloud:2.3.2-1510681135"
+    },
+    {
+      "sourceImage": "ubuntu:18.04",
+      "destinationImage": "__ACCOUNT_ID__.dkr.ecr.ap-southeast-1.amazonaws.com/ecr-public/lts/ubuntu:18.04"
+    }
+  ]
+}

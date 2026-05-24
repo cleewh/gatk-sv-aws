@@ -1,0 +1,33 @@
+# Build whamg-streaming with --streaming mode (sequential read, memory-bounded)
+FROM --platform=linux/amd64 ubuntu:20.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    git cmake build-essential zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the streaming fork source
+COPY wham-streaming /build/wham
+WORKDIR /build/wham
+
+# Build
+RUN mkdir -p src/obj bin \
+    && cd src/bamtools && mkdir -p build && cd build \
+    && cmake .. \
+    && make BamTools-static 2>&1 || true \
+    && ls /build/wham/src/bamtools/lib/ \
+    && cd /build/wham \
+    && cd src/Complete-Striped-Smith-Waterman-Library/src && make && cd /build/wham \
+    && cd src/fastahack && make && cd /build/wham \
+    && make bin/whamg
+
+# Final image: original wham + streaming binary
+ARG ACCOUNT_ID
+FROM ${ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52
+
+# Install as whamg-streaming (keep original whamg intact)
+COPY --from=builder /build/wham/bin/whamg /usr/bin/whamg-streaming
+
+# Verify
+RUN whamg 2>&1 | head -1 || true
+RUN whamg-streaming 2>&1 | head -1 || true

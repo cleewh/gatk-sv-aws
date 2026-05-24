@@ -1,0 +1,16 @@
+[
+  {
+    "file": "TasksClusterBatch.wdl",
+    "change_kind": "bugfix",
+    "reason": "Added gatk IndexFeatureFile loop before SVCluster command to index intermediate VCFs that lack .tbi indexes. HealthOmics FUSE does not auto-co-locate .tbi files for intermediate outputs.",
+    "upstream_behavior": "SVCluster assumes .tbi indexes are co-located with input VCFs",
+    "healthomics_behavior": "Intermediate VCFs from FormatVcf/JoinVcfs lack .tbi indexes; SVCluster fails with missing index error"
+  },
+  {
+    "file": "TasksClusterBatch.wdl",
+    "change_kind": "resource_override",
+    "reason": "Bumped SVCluster default memory from 3.75 GiB to 8 GiB. Default is insufficient for cohort-level clustering.",
+    "upstream_behavior": "SVCluster default_attr.mem_gb = 3.75",
+    "healthomics_behavior": "SVCluster OOMs at 3.75 GiB with 10-sample cohort VCFs"
+  }
+]

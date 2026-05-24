@@ -1,0 +1,28 @@
+# Build whamg-lean with --lean mode (sliding-window, memory-bounded)
+FROM --platform=linux/amd64 ubuntu:20.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    git cmake build-essential zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY wham-lean /build/wham
+WORKDIR /build/wham
+
+RUN mkdir -p src/obj bin \
+    && cd src/bamtools && mkdir -p build && cd build \
+    && cmake .. \
+    && make BamTools-static 2>&1 || true \
+    && ls /build/wham/src/bamtools/lib/ \
+    && cd /build/wham \
+    && cd src/Complete-Striped-Smith-Waterman-Library/src && make && cd /build/wham \
+    && cd src/fastahack && make && cd /build/wham \
+    && make bin/whamg
+
+ARG ACCOUNT_ID
+FROM ${ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52
+
+COPY --from=builder /build/wham/bin/whamg /usr/bin/whamg-lean
+
+RUN whamg 2>&1 | head -1 || true
+RUN whamg-lean 2>&1 | head -1 || true

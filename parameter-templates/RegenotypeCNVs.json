@@ -1,0 +1,102 @@
+{
+  "batch_depth_vcfs": {
+    "description": "Input batch_depth_vcfs for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "batches": {
+    "description": "Input batches for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[String]"
+  },
+  "cohort": {
+    "description": "Input cohort for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "String"
+  },
+  "contig_list": {
+    "description": "Input contig_list for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "File"
+  },
+  "coveragefile_idxs": {
+    "description": "Input coveragefile_idxs for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "coveragefiles": {
+    "description": "Input coveragefiles for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "depth_vcfs": {
+    "description": "Input depth_vcfs for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "genotyping_rd_table": {
+    "description": "Input genotyping_rd_table for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "medianfiles": {
+    "description": "Input medianfiles for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "merge_batch_sites_vcf": {
+    "description": "Input merge_batch_sites_vcf for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "File"
+  },
+  "min_var_per_sample_outlier_threshold": {
+    "description": "Input min_var_per_sample_outlier_threshold for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Int"
+  },
+  "n_RdTest_bins": {
+    "description": "Input n_RdTest_bins for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Int"
+  },
+  "n_per_split": {
+    "description": "Input n_per_split for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Int"
+  },
+  "ploidy_tables": {
+    "description": "Input ploidy_tables for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "regeno_allele_count_threshold": {
+    "description": "Input regeno_allele_count_threshold for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Int"
+  },
+  "regeno_coverage_medians": {
+    "description": "Input regeno_coverage_medians for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "regeno_max_allele_freq": {
+    "description": "Input regeno_max_allele_freq for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Float"
+  },
+  "regeno_sample_overlap": {
+    "description": "Input regeno_sample_overlap for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "Float"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow RegenotypeCNVs",
+    "optional": false,
+    "type": "String"
+  }
+}

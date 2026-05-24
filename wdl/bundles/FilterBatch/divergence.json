@@ -1,0 +1,11 @@
+[
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'filtered_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatch.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'sites_filtered_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatchSites.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatchSites.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'sites_filtered_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatchSamples.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatchSamples.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_input_decl: 'melt_counts')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatchSamples.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'outlier_filtered_melt_vcf')","upstream_commit":"7eb2af1feea9"},
+  {"module":"FilterBatch","upstream_path":"wdl/FilterBatchSamples.wdl","change_kind":"remove_caller","reason":"MELT excluded per Req 2a.3 (ast_output: 'outlier_filtered_melt_vcf_index')","upstream_commit":"7eb2af1feea9"}
+]
