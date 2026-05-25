@@ -24,7 +24,7 @@ SAMPLE_ID="${1:?Usage: $0 <sample_id>}"
 REGION="${AWS_DEFAULT_REGION:-ap-southeast-1}"
 ACCOUNT_ID="${AWS_ACCOUNT_ID:?Set AWS_ACCOUNT_ID env var to your 12-digit AWS account ID}"
 ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/gatk-sv-healthomics-run-role"
-CACHE_ID="9564200"
+CACHE_ID="${GATK_SV_RUN_CACHE_ID:?Set GATK_SV_RUN_CACHE_ID env var to your HealthOmics run cache id (see scripts/bootstrap/03_provision_run_cache.py)}"
 OUTPUT_BASE="s3://healthomics-outputs-${ACCOUNT_ID}-apse1/runs/gatk-sv-e2e/${SAMPLE_ID}"
 
 # Buckets

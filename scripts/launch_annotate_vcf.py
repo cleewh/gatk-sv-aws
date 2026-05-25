@@ -8,8 +8,9 @@ plus gnomAD-SV allele frequencies.
 AnnotateVcf doesn't use GroupedSVCluster/SvtkResolve, so it should work
 on HealthOmics without the 47-s kill issue.
 """
-import os
 from __future__ import annotations
+
+import os
 
 import sys
 import time
@@ -23,6 +24,12 @@ OUTPUT_BUCKET = f"healthomics-outputs-{ACCOUNT}-apse1"
 REF_BASE = (
     f"s3://omics-ref-{REGION}-{ACCOUNT}/gatk-sv/reference/GRCh38"
 )
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _cost_tags import cohort_id_from_env, cost_tags  # noqa: E402
+
+COHORT_DEFAULT = "gatk-sv-validation-2026q2"
+SAMPLE_COUNT = 10
 
 WORKFLOW_ID = "6832584"  # gatk-sv-annotate-vcf-v2 (already registered)
 
@@ -75,6 +82,7 @@ def main() -> None:
     }
 
     ts = int(time.time())
+    cohort = cohort_id_from_env(default=COHORT_DEFAULT)
     run = omics.start_run(
         workflowId=WORKFLOW_ID,
         name=f"annotate-vcf-{ts}",
@@ -86,11 +94,12 @@ def main() -> None:
         parameters=params,
         storageType="DYNAMIC",
         logLevel="ALL",
-        tags={
-            "gatk-sv:module": "AnnotateVcf",
-            "gatk-sv:version": "v1",
-            "gatk-sv:cohort-id": "gatk-sv-validation-2026q2",
-        },
+        tags=cost_tags(
+            cohort_id=cohort,
+            workflow_version=f"annotate-vcf-{WORKFLOW_ID}",
+            module="AnnotateVcf",
+            sample_count=SAMPLE_COUNT,
+        ),
     )
     print()
     print(f"Run id:      {run['id']}")

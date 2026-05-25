@@ -15,8 +15,9 @@ Files per contig:
 Order matters: the four arrays must be aligned by contig, in the same
 order as the contig_list reference file (chr1, chr2, ..., chrX, chrY).
 """
-import os
 from __future__ import annotations
+
+import os
 
 import sys
 import time

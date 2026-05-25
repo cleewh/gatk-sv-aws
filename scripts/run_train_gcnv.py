@@ -16,6 +16,9 @@ from pathlib import Path
 
 import boto3
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _cost_tags import cohort_id_from_env, cost_tags  # noqa: E402
+
 REGION = "ap-southeast-1"
 ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
 ROLE_ARN = f"arn:aws:iam::{ACCOUNT}:role/gatk-sv-healthomics-run-role"
@@ -57,32 +60,38 @@ def get_counts_uri(sample_id: str) -> str:
         return f"PENDING:{sample_id}"
 
 
-def discover_counts_files(s3_client) -> dict:
-    """Discover completed counts files for all samples."""
+def discover_counts_files(s3_client, cohort_id: str | None = None) -> dict:
+    """Discover completed counts files for all samples.
+
+    If ``cohort_id`` is supplied, scopes discovery to
+    ``runs/gatk-sv-e2e/<cohort>/<sample>/gse/cc/...``.  Otherwise falls
+    back to the historical 2026q2 layout.
+    """
     counts = {}
-    
+    bucket = f"healthomics-outputs-{ACCOUNT}-apse1"
+
     for sample_id in SAMPLES:
-        if sample_id == "NA12878":
-            # Known path from previous successful run
-            counts[sample_id] = f"s3://healthomics-outputs-{ACCOUNT}-apse1/runs/gatk-sv-e2e/NA12878/optimized/collect-counts/7634786/out/counts/NA12878.counts.tsv.gz"
+        if cohort_id:
+            prefix = f"runs/gatk-sv-e2e/{cohort_id}/{sample_id}/gse/cc/"
+        elif sample_id == "NA12878":
+            counts[sample_id] = f"s3://{bucket}/runs/gatk-sv-e2e/NA12878/optimized/collect-counts/7634786/out/counts/NA12878.counts.tsv.gz"
             continue
-        
-        # Search for the counts file in the GSE output path
-        prefix = f"runs/gatk-sv-e2e/{sample_id}/gse/cc/"
-        bucket = f"healthomics-outputs-{ACCOUNT}-apse1"
-        
+        else:
+            prefix = f"runs/gatk-sv-e2e/{sample_id}/gse/cc/"
+
         try:
             paginator = s3_client.get_paginator('list_objects_v2')
+            matches = []
             for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
                 for obj in page.get('Contents', []):
                     if obj['Key'].endswith('.counts.tsv.gz'):
-                        counts[sample_id] = f"s3://{bucket}/{obj['Key']}"
-                        break
-                if sample_id in counts:
-                    break
+                        matches.append(obj)
+            if matches:
+                latest = max(matches, key=lambda o: o['LastModified'])
+                counts[sample_id] = f"s3://{bucket}/{latest['Key']}"
         except Exception as e:
             print(f"  Warning: Could not find counts for {sample_id}: {e}")
-    
+
     return counts
 
 
@@ -90,13 +99,19 @@ def main():
     parser = argparse.ArgumentParser(description="Launch TrainGCNV")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--check-only", action="store_true", help="Only check if counts files exist")
+    parser.add_argument("--cohort-id", default=None,
+                        help=("Cohort id used to scope GSE counts discovery. "
+                              "If omitted, falls back to GATK_SV_COHORT_ID env, "
+                              "then to the historical 2026q2 layout."))
     args = parser.parse_args()
+
+    cohort_for_paths = args.cohort_id or os.environ.get("GATK_SV_COHORT_ID")
 
     s3_client = boto3.client("s3", region_name=REGION)
     omics_client = boto3.client("omics", region_name=REGION)
 
     print("Discovering counts files for all samples...")
-    counts = discover_counts_files(s3_client)
+    counts = discover_counts_files(s3_client, cohort_id=cohort_for_paths)
     
     print(f"\nFound counts for {len(counts)}/{len(SAMPLES)} samples:")
     for sample_id in SAMPLES:
@@ -150,14 +165,21 @@ def main():
 
     # Launch the run
     output_uri = f"{OUTPUT_BASE}/batch/train-gcnv/"
-    
+    cohort = cohort_id_from_env(default=COHORT_ID)
+
     resp = omics_client.start_run(
         workflowId=WORKFLOW_ID,
-        name=f"train-gcnv-{COHORT_ID}",
+        name=f"train-gcnv-{cohort}",
         roleArn=ROLE_ARN,
         outputUri=output_uri,
         parameters=params,
         storageType="DYNAMIC",
+        tags=cost_tags(
+            cohort_id=cohort,
+            workflow_version=f"train-gcnv-{WORKFLOW_ID}",
+            module="TrainGCNV",
+            sample_count=len(SAMPLES),
+        ),
     )
     
     run_id = resp["id"]

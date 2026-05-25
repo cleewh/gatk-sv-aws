@@ -17,11 +17,15 @@ Requires: boto3, completed GSE + TrainGCNV outputs
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 import boto3
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _cost_tags import cohort_id_from_env, cost_tags  # noqa: E402
 
 REGION = "ap-southeast-1"
 ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
@@ -37,17 +41,19 @@ SAMPLES = [
     "HG00101", "HG00102", "NA19238", "NA19239", "HG00513",
 ]
 
-# Workflow IDs for each pipeline module
+# Production-validated workflow IDs (matches the IDs that actually completed in
+# the session-4..6 validation runs — see docs/context-transfer-session{4,5,6}.md
+# and docs/phase-status.md).
 WORKFLOWS = {
-    "train_gcnv": "7318208",
-    "gather_batch_evidence": "1575165",
-    "cluster_batch": "6529905",
+    "train_gcnv": "2282352",
+    "gather_batch_evidence": "1575165",     # v5: FUSE / array-alignment / gCNV-mem fixes
+    "cluster_batch": "2641017",             # v3: IndexFeatureFile + 8 GiB SVCluster
     "generate_batch_metrics": "5339393",
-    "filter_batch": "6118948",
-    "merge_batch_sites": "1825208",
+    "filter_batch": "3328339",              # v3: array-alignment + empty-Scramble + run_module_metrics=false
+    "merge_batch_sites": "3326995",         # v2: IndexFeatureFile + 8 GiB SVCluster
     "genotype_batch": "9542089",
-    "regenotype_cnvs": "8299455",
-    "make_cohort_vcf": "3584634",  # v3: IndexFeatureFile fix for SVCluster + GroupedSVCluster, 8 GiB
+    "regenotype_cnvs": "8299455",           # skipped for ≤10-sample cohorts (no variants meet criteria)
+    "make_cohort_vcf": "3584634",           # NOTE: hits the 47-s kill on HealthOmics; production uses EC2 hybrid
     "annotate_vcf": "6832584",
 }
 
@@ -83,12 +89,18 @@ REF = {
 }
 
 
-def discover_gse_outputs(s3_client) -> dict:
+def discover_gse_outputs(s3_client, cohort_id: str | None = None) -> dict:
     """Discover all GSE outputs for the cohort.
 
     Iterates over SAMPLES in order and selects exactly one file per sample
     per output type. If multiple matches exist (e.g., from prior test runs),
     the file with the latest LastModified timestamp is selected.
+
+    Args:
+        s3_client: boto3 s3 client.
+        cohort_id: If supplied, discovery scopes to ``runs/gatk-sv-e2e/<cohort>/<sample>/gse/``.
+            If None, falls back to the historical 2026q2 layout (``runs/gatk-sv-e2e/<sample>/{gse|optimized}/``)
+            with NA12878 special-cased to ``optimized/``.
 
     Raises:
         FileNotFoundError: If a sample is missing a required output file.
@@ -111,7 +123,9 @@ def discover_gse_outputs(s3_client) -> dict:
 
     for sample_id in SAMPLES:
         # Construct the correct prefix for this sample
-        if sample_id == "NA12878":
+        if cohort_id:
+            prefix = f"runs/gatk-sv-e2e/{cohort_id}/{sample_id}/gse/"
+        elif sample_id == "NA12878":
             prefix = f"runs/gatk-sv-e2e/{sample_id}/optimized/"
         else:
             prefix = f"runs/gatk-sv-e2e/{sample_id}/gse/"
@@ -294,13 +308,20 @@ def main():
             return
 
         omics = boto3.client("omics", region_name=REGION)
+        cohort = cohort_id_from_env(default=COHORT_ID)
         resp = omics.start_run(
             workflowId=WORKFLOWS["gather_batch_evidence"],
-            name=f"gbe-{COHORT_ID}",
+            name=f"gbe-{cohort}",
             roleArn=ROLE_ARN,
             outputUri=f"{OUTPUT_BASE}/batch/gather-batch-evidence/",
             parameters=params,
             storageType="DYNAMIC",
+            tags=cost_tags(
+                cohort_id=cohort,
+                workflow_version=f"gbe-{WORKFLOWS['gather_batch_evidence']}",
+                module="GatherBatchEvidence",
+                sample_count=len(SAMPLES),
+            ),
         )
         print(f"\n✓ GatherBatchEvidence launched: run {resp['id']}")
 

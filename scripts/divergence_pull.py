@@ -17,8 +17,9 @@ Usage:
 
 Both prefixes are inferred from ``gse-cohort-runs.json`` when not given.
 """
-import os
 from __future__ import annotations
+
+import os
 
 import argparse
 import json

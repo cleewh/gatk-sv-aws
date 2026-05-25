@@ -18,25 +18,31 @@ This script:
    - Invoke `miniwdl run wdl/MakeCohortVcfRemainingSteps.wdl -i inputs.json`
 3. Polls until completion, then uploads the output VCF back to S3.
 """
-import os
 from __future__ import annotations
 
+import os
+
 import json
+import sys
 import time
 from pathlib import Path
 
 import boto3
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _cost_tags import cohort_id_from_env, cost_tags  # noqa: E402
+
 REGION = "ap-southeast-1"
 ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
-INSTANCE_ID = "i-02c67bb34211a85ed"
+INSTANCE_ID = os.environ.get("GATK_SV_EC2_INSTANCE_ID", "__EC2_INSTANCE_ID__")
 OUTPUT_BUCKET = f"healthomics-outputs-{ACCOUNT}-apse1"
 REF_BASE = f"s3://omics-ref-{REGION}-{ACCOUNT}/gatk-sv/reference/GRCh38"
 EC2_OUT_PREFIX = (
     f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch/"
     f"make-cohort-vcf-ec2/combine_batches"
 )
-COHORT = "gatk-sv-validation-2026q2"
+COHORT_DEFAULT = "gatk-sv-validation-2026q2"
+SAMPLE_COUNT = 10
 RUN_BUCKET_PREFIX = (
     f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch/"
     "mcv-remaining-steps-ec2"
@@ -54,19 +60,19 @@ CONTIGS = [
 ]
 
 
-def build_inputs_json() -> dict:
+def build_inputs_json(cohort: str) -> dict:
     """Compose the miniwdl input JSON, matching MakeCohortVcfRemainingSteps."""
     combined_vcfs = [
-        f"{EC2_OUT_PREFIX}/{COHORT}.combine_batches.{c}.svtk_formatted.vcf.gz"
+        f"{EC2_OUT_PREFIX}/{cohort}.combine_batches.{c}.svtk_formatted.vcf.gz"
         for c in CONTIGS
     ]
     combined_vcf_indexes = [v + ".tbi" for v in combined_vcfs]
     bothside_pass = [
-        f"{EC2_OUT_PREFIX}/{COHORT}.combine_batches.{c}.bothsides_sr_support.txt"
+        f"{EC2_OUT_PREFIX}/{cohort}.combine_batches.{c}.bothsides_sr_support.txt"
         for c in CONTIGS
     ]
     background_fail = [
-        f"{EC2_OUT_PREFIX}/{COHORT}.combine_batches.{c}.high_sr_background.txt"
+        f"{EC2_OUT_PREFIX}/{cohort}.combine_batches.{c}.high_sr_background.txt"
         for c in CONTIGS
     ]
 
@@ -75,7 +81,7 @@ def build_inputs_json() -> dict:
     )
 
     inputs = {
-        "MakeCohortVcfRemainingSteps.cohort_name": COHORT,
+        "MakeCohortVcfRemainingSteps.cohort_name": cohort,
         "MakeCohortVcfRemainingSteps.batches": ["batch_01"],
         "MakeCohortVcfRemainingSteps.ped_file": f"{REF_BASE}/cohort.ped",
         "MakeCohortVcfRemainingSteps.combined_vcfs": combined_vcfs,
@@ -175,14 +181,29 @@ def build_inputs_json() -> dict:
     return inputs
 
 
-def upload_inputs_to_s3(inputs: dict) -> str:
+def upload_inputs_to_s3(inputs: dict, tags: dict[str, str]) -> str:
     s3 = boto3.client("s3", region_name=REGION)
     body = json.dumps(inputs, indent=2).encode()
     key = "workflows/mcv-remaining-steps/v2/inputs.json"
-    s3.put_object(Bucket=OUTPUT_BUCKET, Key=key, Body=body)
+    s3.put_object(
+        Bucket=OUTPUT_BUCKET,
+        Key=key,
+        Body=body,
+        Tagging="&".join(f"{k}={v}" for k, v in tags.items()),
+    )
     uri = f"s3://{OUTPUT_BUCKET}/{key}"
     print(f"  uploaded inputs.json: {uri}")
     return uri
+
+
+def tag_ec2_instance(tags: dict[str, str]) -> None:
+    """Apply Property-10 cost tags to the EC2 instance running the hybrid path."""
+    ec2 = boto3.client("ec2", region_name=REGION)
+    ec2.create_tags(
+        Resources=[INSTANCE_ID],
+        Tags=[{"Key": k, "Value": v} for k, v in tags.items()],
+    )
+    print(f"  tagged {INSTANCE_ID} with {len(tags)} cost tags")
 
 
 EC2_RUN_SCRIPT = r"""#!/bin/bash
@@ -227,8 +248,20 @@ echo $MINIWDL_PID > $WORK/run.pid
 
 
 def main() -> None:
-    inputs = build_inputs_json()
-    upload_inputs_to_s3(inputs)
+    cohort = cohort_id_from_env(default=COHORT_DEFAULT)
+    tags = cost_tags(
+        cohort_id=cohort,
+        workflow_version="mcv-remaining-steps-ec2-miniwdl",
+        module="MakeCohortVcfRemainingSteps",
+        sample_count=SAMPLE_COUNT,
+    )
+    print(f"Cohort:  {cohort}")
+    print(f"Tags:    {tags}")
+    print()
+
+    tag_ec2_instance(tags)
+    inputs = build_inputs_json(cohort)
+    upload_inputs_to_s3(inputs, tags)
     print()
 
     # Send the run script

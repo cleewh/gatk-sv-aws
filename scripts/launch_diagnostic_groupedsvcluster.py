@@ -9,8 +9,9 @@ Strategy:
   every 5s a live tail of GATK stderr to a sentinel S3 prefix that we
   control independently of HealthOmics' own log delivery.
 """
-import os
 from __future__ import annotations
+
+import os
 
 import json
 import time
@@ -18,6 +19,7 @@ from pathlib import Path
 
 import boto3
 
+INSTANCE_ID = os.environ.get("GATK_SV_EC2_INSTANCE_ID", "__EC2_INSTANCE_ID__")
 REGION = "ap-southeast-1"
 ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
 ROLE_ARN = f"arn:aws:iam::{ACCOUNT}:role/gatk-sv-healthomics-run-role"
@@ -51,7 +53,7 @@ def stage_chr1_input() -> str:
     import boto3 as _b3
     ssm = _b3.client("ssm", region_name=REGION)
     cmd = ssm.send_command(
-        InstanceIds=["i-02c67bb34211a85ed"],
+        InstanceIds=[INSTANCE_ID],
         DocumentName="AWS-RunShellScript",
         Parameters={
             "commands": [
@@ -73,7 +75,7 @@ def stage_chr1_input() -> str:
     for _ in range(20):
         time.sleep(5)
         inv = ssm.get_command_invocation(
-            CommandId=cid, InstanceId="i-02c67bb34211a85ed"
+            CommandId=cid, InstanceId=INSTANCE_ID
         )
         if inv["Status"] in {"Success", "Failed", "Cancelled", "TimedOut"}:
             break

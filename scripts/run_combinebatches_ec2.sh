@@ -8,6 +8,29 @@
 set -euxo pipefail
 
 ACCOUNT_ID="${AWS_ACCOUNT_ID:?Set AWS_ACCOUNT_ID env var to your 12-digit AWS account ID}"
+COHORT="${GATK_SV_COHORT_ID:-gatk-sv-validation-2026q2}"
+SAMPLE_COUNT="${GATK_SV_SAMPLE_COUNT:-10}"
+ENVIRONMENT="${GATK_SV_ENVIRONMENT:-validation}"
+
+# Property-10 cost-tag set, applied to:
+#   - the EC2 instance itself (so EC2 line items in Cost Explorer attribute back)
+#   - every S3 object uploaded as part of this workflow (so S3 storage / requests attribute back)
+COST_TAGS=(
+    "Key=gatk-sv:cohort-id,Value=${COHORT}"
+    "Key=gatk-sv:workflow-version,Value=combinebatches-ec2-bash"
+    "Key=gatk-sv:module,Value=MakeCohortVcf:CombineBatches"
+    "Key=gatk-sv:sample-count,Value=${SAMPLE_COUNT}"
+    "Key=gatk-sv:environment,Value=${ENVIRONMENT}"
+)
+
+# Tag the running EC2 instance with the cohort id so EC2 cost attributes correctly.
+INSTANCE_ID="$(curl -fs http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || echo '')"
+if [ -n "$INSTANCE_ID" ]; then
+    aws ec2 create-tags \
+        --resources "$INSTANCE_ID" \
+        --tags "${COST_TAGS[@]}" \
+        --region "${AWS_DEFAULT_REGION:-ap-southeast-1}" || echo "WARN: could not tag $INSTANCE_ID"
+fi
 
 GATK_DOCKER="${ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/gatk:mw-gatk-sv-672d85"
 SV_PIPELINE_DOCKER="${ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604"
@@ -26,8 +49,6 @@ REF_BUCKET="omics-ref-ap-southeast-1-${ACCOUNT_ID}"
 REF_PREFIX="gatk-sv/reference/GRCh38"
 OUT_BUCKET="healthomics-outputs-${ACCOUNT_ID}-apse1"
 OUT_PREFIX="runs/gatk-sv-e2e/batch/make-cohort-vcf-ec2"
-
-COHORT="gatk-sv-validation-2026q2"
 
 echo "=========================================="
 echo "Stage 1: Download inputs and references"
@@ -235,10 +256,19 @@ done
 
 echo
 echo "=========================================="
-echo "Stage 4: Upload outputs to S3"
+echo "Stage 4: Upload outputs to S3 (with cost tags)"
 echo "=========================================="
 
-aws s3 sync $OUTPUTS s3://$OUT_BUCKET/$OUT_PREFIX/combine_batches/ --quiet
+# Build URL-encoded S3 tagging string from the cost tags above.
+S3_TAGGING="gatk-sv%3Acohort-id=${COHORT}&gatk-sv%3Aworkflow-version=combinebatches-ec2-bash&gatk-sv%3Amodule=MakeCohortVcf%3ACombineBatches&gatk-sv%3Asample-count=${SAMPLE_COUNT}&gatk-sv%3Aenvironment=${ENVIRONMENT}"
+
+# aws s3 sync doesn't accept --tagging, so upload object-by-object via cp.
+for f in "$OUTPUTS"/*; do
+    base="$(basename "$f")"
+    aws s3 cp "$f" "s3://$OUT_BUCKET/$OUT_PREFIX/combine_batches/$base" \
+        --quiet \
+        --tagging "$S3_TAGGING"
+done
 
 echo
 echo "=========================================="

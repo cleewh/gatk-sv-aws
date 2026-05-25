@@ -11,8 +11,9 @@ Inputs come from the existing per-sample manifest in S3.
 Outputs go to ``s3://{output_bucket}/runs/gatk-sv-e2e/divergence/<sample>/``
 in a flat layout matching ``divergence_pull.py``'s expectations.
 """
-import os
 from __future__ import annotations
+
+import os
 
 import argparse
 import json
@@ -24,7 +25,7 @@ import boto3
 
 REGION = "ap-southeast-1"
 ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
-INSTANCE_ID = "i-02c67bb34211a85ed"
+INSTANCE_ID = os.environ.get("GATK_SV_EC2_INSTANCE_ID", "__EC2_INSTANCE_ID__")
 OUTPUT_BUCKET = f"healthomics-outputs-{ACCOUNT}-apse1"
 
 # Reuse the HealthOmics GSE bundle (already lint-clean and registered).

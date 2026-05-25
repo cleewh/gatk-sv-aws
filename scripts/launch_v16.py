@@ -6,8 +6,9 @@ workflow 8667186): GroupedSVCluster ran fine on HealthOmics when track .bed.gz
 files were passed as individual File inputs rather than extracted from a
 runtime tarball. v16 swaps the tarball for three flat File pairs.
 """
-import os
 from __future__ import annotations
+
+import os
 
 import sys
 import time

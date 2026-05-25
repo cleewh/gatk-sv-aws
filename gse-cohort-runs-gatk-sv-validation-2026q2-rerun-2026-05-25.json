@@ -1,0 +1,316 @@
+{
+  "cohort_id": "gatk-sv-validation-2026q2-rerun-2026-05-25",
+  "launched_at": "2026-05-25T00:45:59Z",
+  "samples": [
+    "NA12878",
+    "HG00096",
+    "HG00097",
+    "HG00099",
+    "HG00100",
+    "HG00101",
+    "HG00102",
+    "NA19238",
+    "NA19239",
+    "HG00513"
+  ],
+  "modules": [
+    "wham",
+    "manta",
+    "cc",
+    "scramble",
+    "cse"
+  ],
+  "runs": [
+    {
+      "id": "3127968",
+      "name": "wham-NA12878",
+      "module": "wham",
+      "sample": "NA12878",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "6441365",
+      "name": "manta-NA12878",
+      "module": "manta",
+      "sample": "NA12878",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "9539846",
+      "name": "cc-NA12878",
+      "module": "cc",
+      "sample": "NA12878",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "1269289",
+      "name": "cse-NA12878",
+      "module": "cse",
+      "sample": "NA12878",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "7674770",
+      "name": "wham-HG00096",
+      "module": "wham",
+      "sample": "HG00096",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "2571368",
+      "name": "manta-HG00096",
+      "module": "manta",
+      "sample": "HG00096",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "6242515",
+      "name": "cc-HG00096",
+      "module": "cc",
+      "sample": "HG00096",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "1368466",
+      "name": "cse-HG00096",
+      "module": "cse",
+      "sample": "HG00096",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "6214802",
+      "name": "wham-HG00097",
+      "module": "wham",
+      "sample": "HG00097",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "4500544",
+      "name": "manta-HG00097",
+      "module": "manta",
+      "sample": "HG00097",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "5402839",
+      "name": "cc-HG00097",
+      "module": "cc",
+      "sample": "HG00097",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "8002827",
+      "name": "cse-HG00097",
+      "module": "cse",
+      "sample": "HG00097",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "8912167",
+      "name": "wham-HG00099",
+      "module": "wham",
+      "sample": "HG00099",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "7045097",
+      "name": "manta-HG00099",
+      "module": "manta",
+      "sample": "HG00099",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "7665469",
+      "name": "cc-HG00099",
+      "module": "cc",
+      "sample": "HG00099",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "9341809",
+      "name": "cse-HG00099",
+      "module": "cse",
+      "sample": "HG00099",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "9630971",
+      "name": "wham-HG00100",
+      "module": "wham",
+      "sample": "HG00100",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "2192237",
+      "name": "manta-HG00100",
+      "module": "manta",
+      "sample": "HG00100",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "2174218",
+      "name": "cc-HG00100",
+      "module": "cc",
+      "sample": "HG00100",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "2436729",
+      "name": "cse-HG00100",
+      "module": "cse",
+      "sample": "HG00100",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "1338019",
+      "name": "wham-HG00101",
+      "module": "wham",
+      "sample": "HG00101",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "6713221",
+      "name": "manta-HG00101",
+      "module": "manta",
+      "sample": "HG00101",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "6917025",
+      "name": "cc-HG00101",
+      "module": "cc",
+      "sample": "HG00101",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "5844173",
+      "name": "cse-HG00101",
+      "module": "cse",
+      "sample": "HG00101",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "6833003",
+      "name": "wham-HG00102",
+      "module": "wham",
+      "sample": "HG00102",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "1361947",
+      "name": "manta-HG00102",
+      "module": "manta",
+      "sample": "HG00102",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "4826002",
+      "name": "cc-HG00102",
+      "module": "cc",
+      "sample": "HG00102",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "6008573",
+      "name": "cse-HG00102",
+      "module": "cse",
+      "sample": "HG00102",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "4721823",
+      "name": "wham-NA19238",
+      "module": "wham",
+      "sample": "NA19238",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "3911590",
+      "name": "manta-NA19238",
+      "module": "manta",
+      "sample": "NA19238",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "8729505",
+      "name": "cc-NA19238",
+      "module": "cc",
+      "sample": "NA19238",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "4292529",
+      "name": "cse-NA19238",
+      "module": "cse",
+      "sample": "NA19238",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "8318917",
+      "name": "wham-NA19239",
+      "module": "wham",
+      "sample": "NA19239",
+      "workflow_id": "2723477",
+      "tier": "Standard_Tier"
+    },
+    {
+      "id": "9076474",
+      "name": "manta-NA19239",
+      "module": "manta",
+      "sample": "NA19239",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "6613729",
+      "name": "cc-NA19239",
+      "module": "cc",
+      "sample": "NA19239",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "4085299",
+      "name": "cse-NA19239",
+      "module": "cse",
+      "sample": "NA19239",
+      "workflow_id": "7038412"
+    },
+    {
+      "id": "6441471",
+      "name": "wham-HG00513",
+      "module": "wham",
+      "sample": "HG00513",
+      "workflow_id": "6217382",
+      "tier": "High_Memory_Tier"
+    },
+    {
+      "id": "8306347",
+      "name": "manta-HG00513",
+      "module": "manta",
+      "sample": "HG00513",
+      "workflow_id": "4091926"
+    },
+    {
+      "id": "7674987",
+      "name": "cc-HG00513",
+      "module": "cc",
+      "sample": "HG00513",
+      "workflow_id": "8771956"
+    },
+    {
+      "id": "2261711",
+      "name": "cse-HG00513",
+      "module": "cse",
+      "sample": "HG00513",
+      "workflow_id": "7038412"
+    }
+  ],
+  "total_runs": 40
+}

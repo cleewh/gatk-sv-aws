@@ -3,7 +3,7 @@
   "context": {
     "target_region": "ap-southeast-1",
     "healthomics_role_arn": "arn:aws:iam::__ACCOUNT_ID__:role/gatk-sv-healthomics-run-role",
-    "cache_id": "9564200",
+    "cache_id": "__RUN_CACHE_ID__",
     "output_bucket": "healthomics-outputs-__ACCOUNT_ID__-apse1"
   }
 }

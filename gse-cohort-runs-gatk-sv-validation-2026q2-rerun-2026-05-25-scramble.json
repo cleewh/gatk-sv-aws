@@ -1,0 +1,92 @@
+{
+  "cohort_id": "gatk-sv-validation-2026q2-rerun-2026-05-25",
+  "launched_at": "2026-05-25T00:46:57Z",
+  "samples": [
+    "NA12878",
+    "HG00096",
+    "HG00097",
+    "HG00099",
+    "HG00100",
+    "HG00101",
+    "HG00102",
+    "NA19238",
+    "NA19239",
+    "HG00513"
+  ],
+  "modules": [
+    "scramble"
+  ],
+  "runs": [
+    {
+      "id": "7967153",
+      "name": "scramble-NA12878",
+      "module": "scramble",
+      "sample": "NA12878",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "5022287",
+      "name": "scramble-HG00096",
+      "module": "scramble",
+      "sample": "HG00096",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "6224694",
+      "name": "scramble-HG00097",
+      "module": "scramble",
+      "sample": "HG00097",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "2042790",
+      "name": "scramble-HG00099",
+      "module": "scramble",
+      "sample": "HG00099",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "8861432",
+      "name": "scramble-HG00100",
+      "module": "scramble",
+      "sample": "HG00100",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "5867830",
+      "name": "scramble-HG00101",
+      "module": "scramble",
+      "sample": "HG00101",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "5169762",
+      "name": "scramble-HG00102",
+      "module": "scramble",
+      "sample": "HG00102",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "2283392",
+      "name": "scramble-NA19238",
+      "module": "scramble",
+      "sample": "NA19238",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "2286496",
+      "name": "scramble-NA19239",
+      "module": "scramble",
+      "sample": "NA19239",
+      "workflow_id": "9880958"
+    },
+    {
+      "id": "5985230",
+      "name": "scramble-HG00513",
+      "module": "scramble",
+      "sample": "HG00513",
+      "workflow_id": "9880958"
+    }
+  ],
+  "total_runs": 10
+}

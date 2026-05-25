@@ -23,6 +23,13 @@ Subcommands (Req 17.1):
                                         --bucket <bucket> --prefix <prefix>
         Stage a reference-bundle manifest to a regional S3 prefix.
 
+    gatk-sv-healthomics submit --manifest <path> --cohort-id <id> \\
+                               --output-uri s3://bucket/prefix [--wait]
+        Start an execution of the deployed Step Functions orchestrator
+        that runs the full ten-module pipeline end-to-end. With
+        ``--wait`` the command blocks until the pipeline reaches a
+        terminal status and prints the cost report.
+
 Subcommands that require AWS (``stage-reference``, ``submit``) construct
 their boto3 clients lazily; unit tests do not import boto3 transitively.
 """
@@ -165,6 +172,88 @@ def _cmd_stage_reference(args: argparse.Namespace) -> int:
     return 0 if report.all_succeeded else 4
 
 
+def _cmd_submit(args: argparse.Namespace) -> int:
+    """Submit a cohort to the deployed Step Functions orchestrator."""
+    from gatk_sv_aws.submit import (
+        DEFAULT_REGION,
+        DEFAULT_STACK_NAME,
+        format_progress,
+        load_manifest_json,
+        submit_cohort,
+        wait_for_completion,
+    )
+
+    region = args.region or os.environ.get("AWS_DEFAULT_REGION", DEFAULT_REGION)
+
+    # Manifest may be a local file path, an inline JSON dict on stdin, or
+    # an s3://... URI that the state machine itself will resolve.
+    manifest: dict | str
+    if args.manifest.startswith("s3://"):
+        manifest = args.manifest
+    else:
+        manifest = load_manifest_json(args.manifest)
+
+    overrides: dict | None = None
+    if args.storage_type or args.cache_id or args.networking_mode:
+        overrides = {}
+        if args.storage_type:
+            overrides["storage_type"] = args.storage_type
+        if args.cache_id:
+            overrides["cache_id"] = args.cache_id
+        if args.networking_mode:
+            overrides["networking_mode"] = args.networking_mode
+
+    result = submit_cohort(
+        cohort_id=args.cohort_id,
+        manifest=manifest,
+        output_uri=args.output_uri,
+        region=region,
+        state_machine_arn=args.state_machine_arn,
+        stack_name=args.stack_name or DEFAULT_STACK_NAME,
+        overrides=overrides,
+    )
+    logger.info(
+        "submitted cohort %s -> execution %s",
+        result.cohort_id,
+        result.execution_arn,
+    )
+
+    if not args.wait:
+        sys.stdout.write(json.dumps(result.to_json_dict(), indent=2) + "\n")
+        return 0
+
+    sys.stdout.write(
+        json.dumps(result.to_json_dict(), indent=2) + "\n"
+    )
+    sys.stdout.flush()
+
+    def _progress(resp: dict) -> None:
+        sys.stdout.write(format_progress(resp) + "\n")
+        sys.stdout.flush()
+
+    wait = wait_for_completion(
+        execution_arn=result.execution_arn,
+        region=region,
+        progress_callback=_progress,
+    )
+    sys.stdout.write(
+        json.dumps(
+            {
+                "cohort_id": result.cohort_id,
+                "status": wait.status,
+                "duration_seconds": wait.duration_seconds,
+                "output": wait.output,
+                "error": wait.error,
+                "cause": wait.cause,
+            },
+            indent=2,
+            default=str,
+        )
+        + "\n"
+    )
+    return 0 if wait.status == "SUCCEEDED" else 5
+
+
 def _infer_main_wdl(zf) -> str:  # type: ignore[no-untyped-def]
     names = zf.namelist()
     for candidate in ("main.wdl",):
@@ -204,6 +293,64 @@ def build_parser() -> argparse.ArgumentParser:
     p_sr.add_argument("--bucket", required=True)
     p_sr.add_argument("--prefix", required=True)
     p_sr.set_defaults(func=_cmd_stage_reference)
+
+    p_sub = sub.add_parser(
+        "submit",
+        help="Start a cohort end-to-end via the deployed Step Functions orchestrator.",
+    )
+    p_sub.add_argument(
+        "--manifest",
+        required=True,
+        help="Local path to manifest.json, or an s3:// URI for an in-account manifest.",
+    )
+    p_sub.add_argument(
+        "--cohort-id",
+        required=True,
+        help="Stable cohort identifier (also used as the execution name and the gatk-sv:cohort-id tag).",
+    )
+    p_sub.add_argument(
+        "--output-uri",
+        required=True,
+        help="s3://bucket/prefix where every module's outputs will be written.",
+    )
+    p_sub.add_argument(
+        "--region",
+        default=None,
+        help="AWS region. Defaults to $AWS_DEFAULT_REGION or ap-southeast-1.",
+    )
+    p_sub.add_argument(
+        "--stack-name",
+        default=None,
+        help="CloudFormation stack to look up the state machine ARN from (default: GatkSvOrchestratorStack).",
+    )
+    p_sub.add_argument(
+        "--state-machine-arn",
+        default=None,
+        help="Bypass stack lookup and use this ARN directly (test/debug).",
+    )
+    p_sub.add_argument(
+        "--storage-type",
+        choices=("DYNAMIC", "STATIC"),
+        default=None,
+        help="Override storage type. Default DYNAMIC.",
+    )
+    p_sub.add_argument(
+        "--cache-id",
+        default=None,
+        help="Override the run cache ID.",
+    )
+    p_sub.add_argument(
+        "--networking-mode",
+        choices=("RESTRICTED", "VPC"),
+        default=None,
+        help="Override networking mode. Default RESTRICTED.",
+    )
+    p_sub.add_argument(
+        "--wait",
+        action="store_true",
+        help="Block until the pipeline reaches a terminal status; print the cost report when done.",
+    )
+    p_sub.set_defaults(func=_cmd_submit)
 
     return parser
 

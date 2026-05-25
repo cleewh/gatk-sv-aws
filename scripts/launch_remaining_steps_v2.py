@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Launch MakeCohortVcf-RemainingSteps v2 — sibling indexes patched."""
-import os
 from __future__ import annotations
+
+import os
 
 import sys
 import time
@@ -21,6 +22,11 @@ EC2_PREFIX = (
     f"make-cohort-vcf-ec2/combine_batches"
 )
 COHORT = "gatk-sv-validation-2026q2"
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _cost_tags import cohort_id_from_env, cost_tags  # noqa: E402
+
+SAMPLE_COUNT = 10
 BUNDLE = Path(
     "gatk-sv-healthomics/wdl/bundles/MakeCohortVcf/"
     "MakeCohortVcf-RemainingSteps-bundle-v2.zip"
@@ -123,6 +129,13 @@ def main() -> None:
 
     bundle_bytes = BUNDLE.read_bytes()
     print(f"\nCreating workflow ({len(bundle_bytes):,} bytes)…")
+    cohort = cohort_id_from_env(default=COHORT)
+    create_tags = cost_tags(
+        cohort_id=cohort,
+        workflow_version="mcv-remaining-steps-v2",
+        module="MakeCohortVcfRemainingSteps",
+        sample_count=SAMPLE_COUNT,
+    )
     resp = omics.create_workflow(
         name=f"MakeCohortVcfRemainingSteps-v2-{int(time.time())}",
         description=(
@@ -133,10 +146,7 @@ def main() -> None:
         definitionZip=bundle_bytes,
         main="wdl/MakeCohortVcfRemainingSteps.wdl",
         storageCapacity=20,
-        tags={
-            "gatk-sv:module": "MakeCohortVcfRemainingSteps",
-            "gatk-sv:version": "ec2-hybrid-v2",
-        },
+        tags=create_tags,
     )
     wf_id = resp["id"]
     print(f"Workflow id: {wf_id}")
@@ -166,10 +176,12 @@ def main() -> None:
         parameters=params,
         storageType="DYNAMIC",
         logLevel="ALL",
-        tags={
-            "gatk-sv:module": "MakeCohortVcfRemainingSteps",
-            "gatk-sv:version": "ec2-hybrid-v2",
-        },
+        tags=cost_tags(
+            cohort_id=cohort,
+            workflow_version=f"mcv-remaining-steps-v2-{wf_id}",
+            module="MakeCohortVcfRemainingSteps",
+            sample_count=SAMPLE_COUNT,
+        ),
     )
     print()
     print(f"Run id:      {run['id']}")

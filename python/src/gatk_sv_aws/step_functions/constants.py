@@ -75,7 +75,7 @@ DEFAULT_REGION: str = os.environ.get("AWS_DEFAULT_REGION", "ap-southeast-1")
 DEFAULT_ROLE_ARN: str = (
     "arn:aws:iam::__ACCOUNT_ID__:role/gatk-sv-healthomics-run-role"
 )
-DEFAULT_CACHE_ID: str = "9564200"
+DEFAULT_CACHE_ID: str = "__RUN_CACHE_ID__"
 DEFAULT_OUTPUT_BUCKET: str = "healthomics-outputs-__ACCOUNT_ID__-apse1"
 
 # ---------------------------------------------------------------------------

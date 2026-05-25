@@ -8,8 +8,9 @@ metadata stripped) should be identical between the two engines.
 
 Used by tests/gatk_sv_healthomics/acceptance/test_engine_divergence.py.
 """
-import os
 from __future__ import annotations
+
+import os
 
 import argparse
 import sys
@@ -19,7 +20,7 @@ import boto3
 
 REGION = "ap-southeast-1"
 ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
-INSTANCE_ID = "i-02c67bb34211a85ed"
+INSTANCE_ID = os.environ.get("GATK_SV_EC2_INSTANCE_ID", "__EC2_INSTANCE_ID__")
 OUTPUT_BUCKET = f"healthomics-outputs-{ACCOUNT}-apse1"
 
 MANTA_DOCKER = (

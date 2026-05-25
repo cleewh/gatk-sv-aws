@@ -21,7 +21,7 @@ import boto3
 REGION = os.environ.get("AWS_DEFAULT_REGION", "ap-southeast-1")
 ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
 ROLE_ARN = f"arn:aws:iam::{ACCOUNT_ID}:role/gatk-sv-healthomics-run-role"
-CACHE_ID = "9564200"
+CACHE_ID = os.environ.get("GATK_SV_RUN_CACHE_ID", "__RUN_CACHE_ID__")
 SAMPLE_ID = "NA12878"
 OUTPUT_BASE = f"s3://healthomics-outputs-{ACCOUNT_ID}-apse1/runs/gatk-sv-e2e/{SAMPLE_ID}/optimized"
 

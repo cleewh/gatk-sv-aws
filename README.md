@@ -43,31 +43,43 @@ End-to-end joint cohort calling for short-read germline samples — `GatherSampl
 
 ## Quick start
 
+For a customer deploying into their own AWS account from scratch:
+
 ```bash
 # 1. Set your account/region.
 export AWS_ACCOUNT_ID=<your-12-digit-aws-account-id>
-export AWS_DEFAULT_REGION=ap-southeast-1
+export AWS_DEFAULT_REGION=ap-southeast-1   # any HealthOmics region
 
-# 2. Substitute __ACCOUNT_ID__ in shipped JSON config files.
-find iam container-registry-map parameter-templates reference-bundle \
-     validation-cohort/inputs runtime *.json \
-  -name '*.json' -exec sed -i.bak "s/__ACCOUNT_ID__/$AWS_ACCOUNT_ID/g" {} \;
-
-# 3. Install the Python package.
-python3.13 -m venv .venv
+# 2. Install the Python package.
+python3.11 -m venv .venv
 .venv/bin/pip install -e 'python/[dev]'
 
-# 4. Run the unit + property tests (212, ~22s).
+# 3. Bootstrap the AWS account (one-time per account+region; ~30-60 min, ~$5 spend).
+.venv/bin/python scripts/bootstrap/00_substitute_placeholders.py
+.venv/bin/python scripts/bootstrap/01_create_buckets.py
+.venv/bin/python scripts/bootstrap/02_stage_reference.py
+.venv/bin/python scripts/bootstrap/03_setup_ecr.py
+.venv/bin/python scripts/bootstrap/04_build_wham.py
+.venv/bin/python scripts/bootstrap/05_create_iam_role.py
+.venv/bin/python scripts/bootstrap/06_create_run_cache.py        # outputs the run cache id
+.venv/bin/python scripts/bootstrap/07_provision_ec2_hybrid.py    # outputs the EC2 instance id
+.venv/bin/python scripts/bootstrap/08_register_workflows.py      # writes workflow-ids.json
+
+export GATK_SV_RUN_CACHE_ID=<from step 6>
+export GATK_SV_EC2_INSTANCE_ID=<from step 7>
+
+.venv/bin/python scripts/bootstrap/09_validate.py                # sanity check
+
+# 4. Verify the unit + property tests pass on your machine (~22s).
 .venv/bin/python -m pytest python/tests/unit python/tests/properties -q
 
-# 5. Submit a 10-sample cohort end-to-end.
-.venv/bin/python scripts/run_pipeline.py \
-    --cohort-id gatk-sv-validation-2026q2 \
-    --manifest validation-cohort/inputs/manifest.json \
-    --pedigree validation-cohort/inputs/cohort.ped
+# 5. Submit a cohort end-to-end.
+.venv/bin/python scripts/run_cohort_e2e.py \
+    --cohort-id my-cohort-2026q3 \
+    --manifest validation-cohort/inputs/manifest.json
 ```
 
-The full bring-up (ECR images, IAM role, reference bundle staging, workflow registration) is described in [§End-to-end bring-up](#end-to-end-bring-up).
+For details on each bootstrap step (and how to tear everything down), see [`scripts/bootstrap/README.md`](scripts/bootstrap/README.md).
 
 ## Architecture
 

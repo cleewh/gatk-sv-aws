@@ -36,7 +36,7 @@ class GatkSvOrchestratorStack(cdk.Stack):
     Configurable via constructor props or CDK context:
         - ``target_region`` — AWS region (default: ap-southeast-1)
         - ``healthomics_role_arn`` — IAM role for HealthOmics runs
-        - ``cache_id`` — Run cache ID (default: 9564200)
+        - ``cache_id`` — Run cache ID (default: from cdk.json or env)
         - ``output_bucket`` — S3 bucket for outputs
     """
 
@@ -65,7 +65,7 @@ class GatkSvOrchestratorStack(cdk.Stack):
             or "arn:aws:iam::__ACCOUNT_ID__:role/gatk-sv-healthomics-run-role"
         )
         self.cache_id = (
-            cache_id or self.node.try_get_context("cache_id") or "9564200"
+            cache_id or self.node.try_get_context("cache_id") or "__RUN_CACHE_ID__"
         )
         self.output_bucket = (
             output_bucket
@@ -93,6 +93,36 @@ class GatkSvOrchestratorStack(cdk.Stack):
         # Task 4.4: CloudWatch dashboard
         # -----------------------------------------------------------------
         self._dashboard = self._create_dashboard()
+
+        # -----------------------------------------------------------------
+        # Customer entry point: surface the state machine ARN so the
+        # `gatk-sv-healthomics submit` CLI can find it.
+        # -----------------------------------------------------------------
+        cdk.CfnOutput(
+            self,
+            "StateMachineArn",
+            value=self._state_machine.state_machine_arn,
+            export_name=f"{construct_id}-StateMachineArn",
+            description=(
+                "ARN of the orchestrator state machine. The "
+                "`gatk-sv-healthomics submit` CLI reads this output to "
+                "find the entry point."
+            ),
+        )
+        cdk.CfnOutput(
+            self,
+            "OutputBucket",
+            value=self.output_bucket,
+            export_name=f"{construct_id}-OutputBucket",
+            description="S3 bucket the orchestrator writes outputs to.",
+        )
+        cdk.CfnOutput(
+            self,
+            "RunCacheId",
+            value=self.cache_id,
+            export_name=f"{construct_id}-RunCacheId",
+            description="HealthOmics run cache the orchestrator passes to StartRun.",
+        )
 
     # =====================================================================
     # Task 4.1: Lambda Functions

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Helpers for running EC2 commands via SSM for the MakeCohortVcf debug test."""
 
+import os
 import boto3
 import json
 import time
 import sys
 
 REGION = "ap-southeast-1"
-INSTANCE_ID = "i-02c67bb34211a85ed"
+INSTANCE_ID = os.environ.get("GATK_SV_EC2_INSTANCE_ID", "__EC2_INSTANCE_ID__")
 
 
 def run_command(commands, timeout=600, verbose=True):

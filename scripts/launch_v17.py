@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Launch MakeCohortVcf v17 — serialize the failing recluster step."""
-import os
 from __future__ import annotations
+
+import os
 
 import sys
 import time
