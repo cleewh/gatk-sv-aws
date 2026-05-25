@@ -102,11 +102,19 @@ def main() -> int:
             continue
 
         print(f"  {module:<25s} registering...", end=" ", flush=True)
-        param_template = json.loads(template_path.read_text())
+        param_template_raw = json.loads(template_path.read_text())
+        # Strip 'type' field -- HealthOmics parameterTemplate API only accepts
+        # 'description' and 'optional'.  The 'type' field is repo-internal
+        # metadata used by our own validators (see docs/scope-inventory.md).
+        param_template = {
+            k: {kk: vv for kk, vv in v.items() if kk in ("description", "optional")}
+            for k, v in param_template_raw.items()
+        }
         resp = omics.create_workflow(
             name=name,
             engine="WDL",
             definitionZip=bundle_path.read_bytes(),
+            main=f"wdl/{module}.wdl",
             parameterTemplate=param_template,
             description=f"GATK-SV {module} (production-validated bundle: {bundle_rel})",
             tags={

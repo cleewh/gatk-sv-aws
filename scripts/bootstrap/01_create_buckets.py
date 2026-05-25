@@ -128,6 +128,11 @@ def encrypt(s3, name: str) -> None:
 
 
 def main() -> int:
+    ap = __import__("argparse").ArgumentParser(description=__doc__)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="Print what would be created without creating anything")
+    args = ap.parse_args()
+
     account = os.environ.get("AWS_ACCOUNT_ID")
     region = os.environ.get("AWS_DEFAULT_REGION", "ap-southeast-1")
     if not account:
@@ -138,9 +143,18 @@ def main() -> int:
     names = bucket_names(account, region)
 
     print(f"Creating S3 buckets in {region}, account {account}")
+    if args.dry_run:
+        print("(DRY RUN -- no buckets will be created)")
     print()
     for label, name in names.items():
         print(f"  {label:<10s} {name}")
+        if args.dry_run:
+            try:
+                s3.head_bucket(Bucket=name)
+                print(f"    [dry-run] already exists, would configure (encryption + IT + block public)")
+            except ClientError:
+                print(f"    [dry-run] would CREATE")
+            continue
         try:
             created = create_bucket(s3, name, region)
             if created:

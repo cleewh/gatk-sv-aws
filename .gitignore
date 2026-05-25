@@ -43,3 +43,8 @@ runs/
 # HealthOmics issue artifact bundles (contain real account ARNs;
 # delivered separately to AWS service team, not committed publicly)
 issue-artifact/
+
+# workflow-ids.json is generated per-customer by scripts/bootstrap/08
+# and contains numeric HealthOmics workflow IDs from a specific account.
+# Not committed to keep the repo customer-agnostic.
+workflow-ids.json
