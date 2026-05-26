@@ -7,6 +7,11 @@ Tests verify:
 - WHAM_SIZE_THRESHOLD_BYTES constant value
 - Hypothesis property: tier selection partition holds for all inputs
 
+Note: as of 2026-05-26 (post wham logic-regression revert), both Standard_Tier
+and High_Memory_Tier resolve to the same upstream Whamg workflow (8098138).
+The tier *labels* are still preserved for cost-tagging purposes; the workflow
+ID is the same regardless of CRAM size.
+
 Validates: Requirements 1.1, 2.1, 2.2, 2.4, 4.1, 4.2, 5.1
 """
 
@@ -52,24 +57,28 @@ class TestSelectWhamTier:
         size_bytes = 10 * 1024**3
         tier = select_wham_tier(size_bytes)
         assert tier["label"] == "Standard_Tier"
-        assert tier["id"] == "2723477"
+        assert tier["id"] == "8098138"
         assert tier["memory_gib"] == 16
 
     def test_select_wham_tier_high_memory(self) -> None:
-        """Verify select_wham_tier returns High_Memory_Tier when size > 20 GiB."""
+        """Verify select_wham_tier returns High_Memory_Tier when size > 20 GiB.
+
+        Post 2026-05-26: both tiers point at upstream Whamg workflow 8098138.
+        The label distinction is preserved for cost-tag granularity.
+        """
         # 25 GiB — above threshold
         size_bytes = 25 * 1024**3
         tier = select_wham_tier(size_bytes)
         assert tier["label"] == "High_Memory_Tier"
-        assert tier["id"] == "6217382"
-        assert tier["memory_gib"] == 30
+        assert tier["id"] == "8098138"
+        assert tier["memory_gib"] == 16
 
     def test_select_wham_tier_boundary(self) -> None:
         """Verify exactly at 20 GiB (threshold) returns Standard_Tier."""
         size_bytes = WHAM_SIZE_THRESHOLD_BYTES  # exactly 20 GiB
         tier = select_wham_tier(size_bytes)
         assert tier["label"] == "Standard_Tier"
-        assert tier["id"] == "2723477"
+        assert tier["id"] == "8098138"
 
     def test_select_wham_tier_one_byte_over(self) -> None:
         """Verify one byte over threshold returns High_Memory_Tier."""

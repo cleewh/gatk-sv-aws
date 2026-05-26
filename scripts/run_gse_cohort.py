@@ -26,13 +26,25 @@ OUTPUT_BASE = f"s3://healthomics-outputs-{ACCOUNT}-apse1/runs/gatk-sv-e2e"
 REF_BASE = f"s3://omics-ref-{REGION}-{ACCOUNT}/gatk-sv/reference/GRCh38"
 COHORT_BASE = f"s3://omics-cohorts-{REGION}-{ACCOUNT}/cohorts/gatk-sv-validation-2026q2"
 
-# Production workflow IDs
+# Production workflow IDs.
+#
+# wham: upstream Broad Whamg.wdl (single-task, single-threaded full-genome).
+#   Workflow 8098138 was validated 2026-05-26 against the previous "fast" build
+#   (whamg-fast -x 16) and revealed the fast build had only 83% record overlap
+#   -- a real algorithmic divergence. The fast build was reverted; production
+#   now runs upstream whamg. Wall-clock per sample ~3 h on omics.m.xlarge.
+#   See docs/wdl-audit.md for the full validation log.
+#
+# scramble: NOT REGISTERED on HealthOmics. The HealthOmics 47-second kill on
+#   any 2+ task workflow with inter-task data flow makes the upstream 3-task
+#   Scramble.wdl unrunnable. Production scramble now runs as the EC2 hybrid
+#   `scripts/run_scramble_ec2.sh` (cluster_identifier 12-parallel, then
+#   SCRAMble.R, then make_scramble_vcf.py via direct docker run on EC2). See
+#   `scripts/run_cohort_e2e.py` Phase A.5 and `docs/wdl-audit.md`.
 WORKFLOWS = {
     "wham": {
-        "id": "2723477",
-        "storage_type": "STATIC",
-        "storage_capacity": 1200,
-        "tiered": True,
+        "id": "8098138",
+        "storage_type": "DYNAMIC",
     },
     "manta": {
         "id": "4091926",
@@ -42,36 +54,38 @@ WORKFLOWS = {
         "id": "8771956",  # pre-localize version (proven). Use 1635194 for FUSE/2-CPU version.
         "storage_type": "DYNAMIC",
     },
-    "scramble": {
-        "id": "3973675",
-        "storage_type": "STATIC",
-        "storage_capacity": 1200,
-    },
     "cse": {
         "id": "7038412",  # no-prelocalize, 30 GiB, proven working
         "storage_type": "DYNAMIC",
     },
 }
 
-# Tiered wham memory provisioning
+# Legacy tiered wham constants — preserved for backward compat with existing
+# tests, but both tiers now point at the same upstream wham workflow since the
+# upstream binary has uniform memory needs. Kept so launchers that import
+# select_wham_tier() still type-check; planned for removal once callers are
+# migrated.
 WHAM_SIZE_THRESHOLD_BYTES: int = 21_474_836_480  # 20 GiB
 
 WHAM_TIERS = {
     "standard": {
-        "id": "2723477",
+        "id": "8098138",
         "memory_gib": 16,
         "label": "Standard_Tier",
     },
     "high_memory": {
-        "id": "6217382",
-        "memory_gib": 30,
+        "id": "8098138",
+        "memory_gib": 16,
         "label": "High_Memory_Tier",
     },
 }
 
 # Docker images
 DOCKER = {
-    "wham": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/wham:fast-v5",
+    # Upstream Broad GATK-SV wham (single-threaded whamg). The fast-v5 build
+    # was retired 2026-05-26 after MD5 validation showed it produced a
+    # different variant set than upstream.
+    "wham": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52",
     "manta": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/manta:2023-09-14-v0.28.3-beta-3f22f94d",
     "sv_base": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/sv-base:2024-10-25-v0.29-beta-5ea22a52",
     "scramble": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/scramble:2024-10-25-v0.29-beta-5ea22a52",
@@ -258,8 +272,10 @@ def load_samples() -> list:
 def main():
     parser = argparse.ArgumentParser(description="Launch GSE for cohort")
     parser.add_argument("--samples", help="Comma-separated sample IDs (default: all from manifest)")
-    parser.add_argument("--modules", default="wham,manta,cc,scramble,cse",
-                        help="Comma-separated modules to run (default: all)")
+    parser.add_argument("--modules", default="wham,manta,cc,cse",
+                        help="Comma-separated modules to run (default: wham,manta,cc,cse). "
+                             "Note: scramble is NOT included by default; it must be run via "
+                             "scripts/run_scramble_ec2.sh due to the HealthOmics 2-task kill.")
     parser.add_argument("--exclude", help="Comma-separated sample IDs to exclude")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be launched")
     parser.add_argument("--delay", type=float, default=0.5,
@@ -277,6 +293,16 @@ def main():
         samples = [s for s in samples if s not in exclude]
 
     modules = args.modules.split(",")
+
+    if "scramble" in modules:
+        print(
+            "ERROR: scramble is not runnable as a HealthOmics workflow due to the "
+            "47-second kill on multi-task workflows. Run scramble via "
+            "scripts/run_scramble_ec2.sh (or via run_cohort_e2e.py which dispatches it "
+            "automatically). Refusing to launch a scramble HealthOmics workflow.",
+            file=sys.stderr,
+        )
+        return 2
 
     print(f"Launching GSE for {len(samples)} samples × {len(modules)} modules = {len(samples) * len(modules)} runs")
     print(f"Samples: {', '.join(samples)}")

@@ -48,3 +48,12 @@ issue-artifact/
 # and contains numeric HealthOmics workflow IDs from a specific account.
 # Not committed to keep the repo customer-agnostic.
 workflow-ids.json
+
+# Per-cohort scratch files written by SSM-dispatched validation jobs.
+# Contain real HealthOmics run IDs and SSM command IDs from a specific account;
+# not committed to keep repo customer-agnostic.
+sample-logs/
+scramble-ec2-runs.json
+validation-fix-runs.json
+cost-report-*.json
+gse-cohort-runs-customer-sim.json

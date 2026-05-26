@@ -31,21 +31,21 @@ COHORT_BASE = (
 )
 
 WORKFLOWS = {
-    "wham": {"id": "2723477", "storage_type": "STATIC", "storage_capacity": 1200, "tiered": True},
+    # wham: upstream Broad Whamg.wdl (single-task, single-threaded full-genome).
+    # Validated 2026-05-26 against the previous "fast" build (whamg-fast -x 16);
+    # the fast build was reverted due to a 17% record divergence.
+    # Wall-clock per sample ~3 h on omics.m.xlarge.
+    "wham": {"id": "8098138", "storage_type": "DYNAMIC"},
     "manta": {"id": "4091926", "storage_type": "DYNAMIC"},
     "cc": {"id": "8771956", "storage_type": "DYNAMIC"},
-    "scramble": {"id": "9880958", "storage_type": "STATIC", "storage_capacity": 1200},
+    # scramble: NOT registered. Runs via scripts/run_scramble_ec2.sh because
+    # HealthOmics terminates 2+ task workflows at 47 s. See docs/wdl-audit.md.
     "cse": {"id": "7038412", "storage_type": "DYNAMIC"},
 }
 
-WHAM_TIERS = {
-    "standard": {"id": "2723477", "memory_gib": 16, "label": "Standard_Tier"},
-    "high_memory": {"id": "6217382", "memory_gib": 30, "label": "High_Memory_Tier"},
-}
-WHAM_THRESHOLD_BYTES = 21_474_836_480  # 20 GiB
-
 DOCKER = {
-    "wham": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/wham:fast-v5",
+    # Upstream Broad GATK-SV wham (single-threaded whamg).
+    "wham": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52",
     "manta": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/manta:2023-09-14-v0.28.3-beta-3f22f94d",
     "sv_base": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/sv-base:2024-10-25-v0.29-beta-5ea22a52",
     "scramble": f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com/gatk-sv/scramble:2024-10-25-v0.29-beta-5ea22a52",
@@ -97,14 +97,6 @@ def build_params(module, sample_id):
             "intervals": REF["intervals"], "docker": DOCKER["sv_base"],
             "sample_id": sample_id,
         }
-    if module == "scramble":
-        return {
-            "cram_or_bam": s["cram"], "cram_or_bam_idx": s["crai"],
-            "ref_fasta": REF["fasta"], "ref_fasta_fai": REF["fai"],
-            "mei_bed": REF["mei_bed"],
-            "scramble_docker": DOCKER["scramble"],
-            "sample_id": sample_id,
-        }
     if module == "cse":
         return {
             "cram_or_bam": s["cram"], "cram_or_bam_idx": s["crai"],
@@ -116,11 +108,11 @@ def build_params(module, sample_id):
             "docker": DOCKER["sv_base"],
             "sample_id": sample_id,
         }
-    raise ValueError(f"Unknown module: {module}")
-
-
-def select_wham_tier(size_bytes):
-    return WHAM_TIERS["standard"] if size_bytes <= WHAM_THRESHOLD_BYTES else WHAM_TIERS["high_memory"]
+    raise ValueError(
+        f"Unknown module: {module!r}. scramble is not a HealthOmics workflow; "
+        "run scripts/run_scramble_ec2.sh instead (or use scripts/run_cohort_e2e.py "
+        "which dispatches it automatically)."
+    )
 
 
 def cost_tags(cohort_id, workflow_version, module, sample_count, environment="validation"):
@@ -137,16 +129,6 @@ def cost_tags(cohort_id, workflow_version, module, sample_count, environment="va
 def launch_run(omics, s3, module, sample_id, cohort_id, sample_count, output_base):
     wf = WORKFLOWS[module]
     workflow_id = wf["id"]
-    tier_label = None
-
-    if wf.get("tiered"):
-        bucket = COHORT_BASE.split("/", 3)[2]
-        key = "/".join(COHORT_BASE.split("/", 3)[3:]) + f"/{sample_id}.final.cram"
-        size = s3.head_object(Bucket=bucket, Key=key)["ContentLength"]
-        tier = select_wham_tier(size)
-        workflow_id = tier["id"]
-        tier_label = tier["label"]
-        print(f"  [{sample_id}] CRAM {size/2**30:.1f} GiB \u2192 {tier_label} (workflow {workflow_id})")
 
     params = build_params(module, sample_id)
     run_name = f"{module}-{sample_id}"
@@ -167,13 +149,10 @@ def launch_run(omics, s3, module, sample_id, cohort_id, sample_count, output_bas
     resp = omics.start_run(**kwargs)
     run_id = resp["id"]
     print(f"  \u2713 {run_name} -> run {run_id}")
-    rec = {
+    return {
         "id": run_id, "name": run_name, "module": module, "sample": sample_id,
         "workflow_id": workflow_id,
     }
-    if tier_label:
-        rec["tier"] = tier_label
-    return rec
 
 
 def load_samples():
@@ -185,7 +164,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cohort-id", required=True)
     ap.add_argument("--samples", help="Comma-separated; default = all from manifest")
-    ap.add_argument("--modules", default="wham,manta,cc,scramble,cse")
+    ap.add_argument("--modules", default="wham,manta,cc,cse",
+                    help="Comma-separated GSE modules. Default omits scramble; "
+                         "scramble is launched separately via scripts/run_scramble_ec2.sh "
+                         "(or run_cohort_e2e.py).")
     ap.add_argument("--delay", type=float, default=1.0)
     ap.add_argument("--output", default=None,
                     help="Run manifest output path (default: gse-cohort-runs-<cohort-id>.json)")
@@ -193,6 +175,13 @@ def main():
 
     samples = args.samples.split(",") if args.samples else load_samples()
     modules = args.modules.split(",")
+    if "scramble" in modules:
+        sys.exit(
+            "ERROR: scramble is not a HealthOmics workflow. Run scripts/run_scramble_ec2.sh "
+            "for each sample (or use scripts/run_cohort_e2e.py which dispatches it "
+            "automatically).\n"
+            "Refusing to launch a scramble HealthOmics workflow."
+        )
     sample_count = len(samples)
     output_base = OUTPUT_BASE_TPL.format(cohort=args.cohort_id)
 

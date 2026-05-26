@@ -3,7 +3,7 @@
 
 This is the single-command path that wraps everything currently scattered
 across `run_gse_cohort_tagged.py`, the per-stage cohort launchers, the EC2
-hybrid (CombineBatches + RemainingSteps), and `launch_annotate_vcf.py`.
+scramble + EC2 hybrid (CombineBatches + RemainingSteps), and `launch_annotate_vcf.py`.
 
 It is intentionally a fat Python script -- not yet Step Functions.
 The Step Functions orchestrator is specced in
@@ -13,18 +13,25 @@ command end-to-end.
 
 What it does:
 
-  Phase A  Per-sample GSE fan-out -- 5 sub-tools (cc, cse, manta, scramble, wham)
-           x N samples, all submitted in parallel and polled to completion.
-  Phase B  Cohort modules on HealthOmics (sequential):
+  Phase A    Per-sample GSE fan-out -- 4 sub-tools (cc, cse, manta, wham)
+             x N samples, all submitted in parallel and polled to completion.
+             scramble is intentionally NOT in Phase A: HealthOmics terminates
+             2+ task workflows at 47 s, so the upstream multi-task Scramble.wdl
+             can't run there. wham reverted to upstream Whamg.wdl 2026-05-26
+             after the "fast" build was found to diverge by ~17 % of records.
+  Phase A.5  scramble on EC2 -- one SSM dispatch of scripts/run_scramble_ec2.sh
+             per sample (cluster_identifier 12-parallel + SCRAMble.R +
+             make_scramble_vcf.py via direct docker run).
+  Phase B    Cohort modules on HealthOmics (sequential):
              GBE -> ClusterBatch -> GenerateBatchMetrics -> FilterBatch
                  -> MergeBatchSites -> GenotypeBatch
-           For each module the parameter dict is built either from a "template"
-           run (an earlier successful run we copy) or from explicit inputs.
-  Phase C  MakeCohortVcf hybrid (EC2 + miniwdl):
-             1. SSM run  scripts/run_combinebatches_ec2.sh       (CombineBatches on EC2 bash + Docker)
-             2. SSM run  scripts/run_remaining_steps_ec2.py      (Resolve / Genotype / Clean / QC via miniwdl)
-  Phase D  AnnotateVcf on HealthOmics.
-  Phase E  Cost report -- write cost-report.json with per-stage runtime + Cost Explorer summary.
+             For each module the parameter dict is built either from a "template"
+             run (an earlier successful run we copy) or from explicit inputs.
+  Phase C    MakeCohortVcf hybrid (EC2 + miniwdl):
+             1. SSM run scripts/run_combinebatches_ec2.sh   (CombineBatches on EC2 bash + Docker)
+             2. SSM run scripts/run_remaining_steps_ec2.py  (Resolve / Genotype / Clean / QC via miniwdl)
+  Phase D    AnnotateVcf on HealthOmics.
+  Phase E    Cost report -- write cost-report.json with per-stage runtime + Cost Explorer summary.
 
 Every resource-creating call carries the Property-10 cost-tag set so
 Cost Explorer reports per-cohort totals cleanly.
@@ -212,6 +219,105 @@ def phase_a_gse_fanout(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeError(f"GSE phase had {len(failed)} non-COMPLETED runs: {failed}")
     print(f"  All {len(run_ids)} GSE runs COMPLETED.")
     return {"manifest": manifest, "run_results": results}
+
+
+# --------------------------------------------------------------------------- #
+# Phase A.5 : scramble on EC2 (one SSM dispatch per sample)
+# --------------------------------------------------------------------------- #
+def phase_a5_scramble_ec2(args: argparse.Namespace, output_base: str) -> list[StageRecord]:
+    """Run scramble for every sample as direct docker on EC2 via SSM.
+
+    HealthOmics terminates 2+ task workflows at 47s, so the upstream multi-task
+    Scramble.wdl can't run there. We dispatch scripts/run_scramble_ec2.sh once
+    per sample.
+    """
+    print("=" * 78)
+    print(f"PHASE A.5: scramble on EC2 (SSM)  ({args.cohort_id})")
+    print("=" * 78)
+
+    samples = (
+        args.samples.split(",") if args.samples
+        else [s["sample_id"] for s in json.loads(Path(args.manifest).read_text())["samples"]]
+    )
+    sample_count = len(samples)
+
+    s3 = boto3.client("s3", region_name=REGION)
+    ssm = boto3.client("ssm", region_name=REGION)
+
+    sh_local = ROOT / "scripts" / "run_scramble_ec2.sh"
+    sh_key = f"workflows/run-scramble-ec2/{args.cohort_id}/run_scramble_ec2.sh"
+    s3.put_object(Bucket=OUTPUT_BUCKET, Key=sh_key, Body=sh_local.read_bytes())
+    print(f"  uploaded scramble shell to s3://{OUTPUT_BUCKET}/{sh_key}")
+
+    pending: dict[str, dict[str, str]] = {}
+    for sid in samples:
+        env_lines = " ".join([
+            f"AWS_ACCOUNT_ID={ACCOUNT}",
+            f"AWS_DEFAULT_REGION={REGION}",
+            f"SAMPLE={sid}",
+            f"GATK_SV_COHORT_ID={args.cohort_id}",
+            f"OUT_PREFIX=runs/gatk-sv-e2e/{args.cohort_id}/{sid}/scramble-real-ec2",
+        ])
+        commands = [
+            f"aws s3 cp s3://{OUTPUT_BUCKET}/{sh_key} /tmp/run_scramble_ec2.sh --region {REGION}",
+            "chmod +x /tmp/run_scramble_ec2.sh",
+            f"export {env_lines} && bash /tmp/run_scramble_ec2.sh",
+        ]
+        resp = ssm.send_command(
+            InstanceIds=[EC2_INSTANCE_ID],
+            DocumentName="AWS-RunShellScript",
+            Parameters={"commands": commands},
+            Comment=f"scramble-ec2-{sid}-{args.cohort_id}",
+            TimeoutSeconds=21_600,
+        )
+        cmd_id = resp["Command"]["CommandId"]
+        pending[cmd_id] = {"sample": sid, "started_at": _now_iso()}
+        print(f"  [{sid}] SSM command id: {cmd_id}")
+
+    records: list[StageRecord] = []
+    started = time.time()
+    for cmd_id, meta in pending.items():
+        sid = meta["sample"]
+        print(f"\n--- polling scramble-ec2 for {sid} (cmd {cmd_id}) ---")
+        inv_started = time.time()
+        last = None
+        while True:
+            try:
+                inv = ssm.get_command_invocation(
+                    CommandId=cmd_id, InstanceId=EC2_INSTANCE_ID
+                )
+            except ssm.exceptions.InvocationDoesNotExist:
+                time.sleep(2)
+                continue
+            st = inv["Status"]
+            if st != last:
+                elapsed = int(time.time() - inv_started)
+                print(f"  [{sid}] status={st} (elapsed={elapsed}s)")
+                last = st
+            if st in {"Success", "Failed", "TimedOut", "Cancelled", "Cancelling"}:
+                break
+            time.sleep(POLL_INTERVAL_SEC)
+        records.append(StageRecord(
+            stage=f"scramble_ec2:{sid}",
+            kind="ssm",
+            id=cmd_id,
+            name=f"run_scramble_ec2.sh:{sid}",
+            started_at=meta["started_at"],
+            finished_at=_now_iso(),
+            status=inv["Status"],
+            duration_sec=time.time() - inv_started,
+            extra={
+                "stdout_tail": (inv.get("StandardOutputContent") or "")[-300:],
+                "output_uri": f"{output_base}/{sid}/scramble-real-ec2/",
+            },
+        ))
+        if inv["Status"] != "Success":
+            print("STDERR tail:", (inv.get("StandardErrorContent") or "")[-1500:])
+            raise RuntimeError(f"scramble-ec2 for sample {sid} ended in status {inv['Status']}")
+
+    print(f"\n  All {sample_count} scramble-ec2 SSM commands Succeeded "
+          f"(total elapsed {int(time.time() - started)}s)")
+    return records
 
 
 # --------------------------------------------------------------------------- #
@@ -523,6 +629,9 @@ def main() -> int:
     ap.add_argument("--samples", default=None, help="Override sample list (comma-separated)")
     ap.add_argument("--modules", default=None, help="GSE sub-tools (default all 5)")
     ap.add_argument("--skip-gse", action="store_true", help="Skip Phase A (GSE outputs already exist)")
+    ap.add_argument("--skip-scramble-ec2", action="store_true",
+                    help="Skip Phase A.5 (scramble on EC2). Use only if scramble outputs "
+                         "already exist for every sample under <output_base>/<sample>/scramble-real-ec2/.")
     ap.add_argument("--skip-cohort", action="store_true", help="Skip Phase B (cohort modules)")
     ap.add_argument("--skip-makecohortvcf", action="store_true", help="Skip Phase C (EC2 hybrid)")
     ap.add_argument("--skip-annotate", action="store_true", help="Skip Phase D (AnnotateVcf)")
@@ -559,6 +668,9 @@ def main() -> int:
                 status=info.get("status"),
                 duration_sec=_wall_clock(info),
             ))
+
+    if not args.skip_scramble_ec2:
+        all_records.extend(phase_a5_scramble_ec2(args, output_base))
 
     if not args.skip_cohort:
         all_records.extend(phase_b_cohort_modules(args, output_base))
