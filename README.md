@@ -95,7 +95,7 @@ flowchart LR
     subgraph ECR [ECR + Pull-Through Cache]
         QPC[quay/* via PTC]
         EPC[ecr-public/* via PTC]
-        WHAM[gatk-sv/wham:fast-v5 — locally built]
+        WHAM[gatk-sv/wham:2024-10-25-... — upstream]
     end
 
     subgraph HO [HealthOmics — 9 of 10 modules]
@@ -151,7 +151,9 @@ The Python and shell launch scripts read `AWS_ACCOUNT_ID` from the environment. 
 
 **JSON config files** under `iam/policies/`, `parameter-templates/`, `container-registry-map/`, `reference-bundle/`, `validation-cohort/inputs/`, and the run-record JSONs at the repo root still contain the literal `__ACCOUNT_ID__` placeholder. Substitute before applying — see the Quick Start `sed` line.
 
-**Dockerfiles** under `wham-patch/` use a build arg:
+**Dockerfiles** under `wham-patch/` use a build arg (these were used for the
+retired `fast-v5` build; see `docs/wdl-audit.md` — production now uses the
+upstream Wham image directly):
 
 ```bash
 docker build --build-arg ACCOUNT_ID=$AWS_ACCOUNT_ID -f wham-patch/Dockerfile .
@@ -197,7 +199,7 @@ The Migration System registers **each upstream module as its own HealthOmics wor
 
 | # | GATK-SV module | AWS service | Workflow ID | Bundle | MELT divergences | Notes |
 |---|---|---|---|---|---:|---|
-| 1 | `GatherSampleEvidence` | HealthOmics | `9690943` | `wdl/bundles/GatherSampleEvidence/GatherSampleEvidence-bundle.zip` | 37 | Per-sample scatter of Manta, Wham, Scramble, GATK-gCNV case-mode, PE/SR/RD/BAF extractors. MELT task removed at packaging. In production we split per-tool (`cc`, `scramble`, `cse`, `manta`, `wham`) for tighter resource control. Memory tiering for Wham (16 GiB / 30 GiB) by CRAM size — see [`tiered-wham-memory`](.kiro/specs/tiered-wham-memory/). |
+| 1 | `GatherSampleEvidence` | HealthOmics + EC2 | `9690943` | `wdl/bundles/GatherSampleEvidence/GatherSampleEvidence-bundle.zip` | 37 | Per-sample scatter of Manta, Wham, Scramble, GATK-gCNV case-mode, PE/SR/RD/BAF extractors. MELT task removed at packaging. In production we split per-tool: **`cc`, `cse`, `manta`, `wham` on HealthOmics**; **`scramble` on EC2** (workflow registration possible but the upstream multi-task `Scramble.wdl` triggers the HealthOmics 47-second multi-task kill — see `docs/wdl-audit.md`). Wham reverted 2026-05-26 from `whamg-fast -x 16` to upstream `whamg` after a body-MD5 validation showed only 83 % record overlap; both Standard and High-Memory tiers now use upstream workflow `8098138` for cost-tag continuity. |
 | 2 | `GatherBatchEvidence` | HealthOmics | `1575165` (v5) | `wdl/bundles/GatherBatchEvidence/GatherBatchEvidence-bundle-v5.zip` | 4 | Cohort-mode gCNV + PE/SR/RD merging. MELT evidence channels dropped. v5 fixes `min/max_interval_size`, array alignment in `discover_gse_outputs`, FUSE-readonly `gunzip` → `zcat`, gCNV memory bumps (60 GiB ploidy, 30 GiB postprocess). |
 | 3 | `ClusterBatch` | HealthOmics | `2641017` (v3) | `wdl/bundles/ClusterBatch/ClusterBatch-bundle-v3.zip` | 12 | First clustering pass. MELT input channel removed. v3 adds `gatk IndexFeatureFile` before SVCluster (intermediate VCFs lack `.tbi`), 8 GiB SVCluster memory override. |
 | 4 | `GenerateBatchMetrics` | HealthOmics | `5339393` | `wdl/bundles/GenerateBatchMetrics/GenerateBatchMetrics-bundle.zip` | 1 | Per-batch QC metrics. Required uploading proper RepeatMasker + segdups BED tracks. |
@@ -222,7 +224,7 @@ All 10 packaged bundles lint clean (`LintAHOWorkflowBundle → success`). Total 
 | sv-pipeline | `gatk-sv/sv-pipeline` | `2026-02-06-v1.1-797b7604` | gcr.io/broad-dsde-methods (PTC) |
 | sv-utils | `gatk-sv/sv-utils` | `2025-01-06-v1.0.1-e902bf4e` | gcr.io/broad-dsde-methods (PTC) |
 | manta | `gatk-sv/manta` | `2023-09-14-v0.28.3-beta-3f22f94d` | gcr.io/broad-dsde-methods (PTC) |
-| wham | `gatk-sv/wham` | `fast-v5` | **locally built** from upstream + `wham-patch/whamg-flush.patch` |
+| wham | `gatk-sv/wham` | `2024-10-25-v0.29-beta-5ea22a52` | gcr.io/broad-dsde-methods (PTC) — upstream Broad image (`whamg-fast` reverted 2026-05-26, see `docs/wdl-audit.md`) |
 | scramble | `gatk-sv/scramble` | `2024-10-25-v0.29-beta-5ea22a52` | gcr.io/broad-dsde-methods (PTC) |
 | samtools-cloud | `gatk-sv/samtools-cloud` | `2024-10-25-v0.29-beta-5ea22a52` | gcr.io/broad-dsde-methods (PTC) |
 | gatk | `gatk-sv/gatk` | `mw-gatk-sv-672d85` | gcr.io/broad-dsde-methods (PTC) |
@@ -230,7 +232,7 @@ All 10 packaged bundles lint clean (`LintAHOWorkflowBundle → success`). Total 
 | stripy | `gatk-sv/stripy` | `2025-11-14-v1.1-7b56c3ac` | gcr.io/broad-dsde-methods (PTC) |
 | genomes-in-the-cloud | `gatk-sv/genomes-in-the-cloud` | `2.3.2-1510681135` | gcr.io/broad-dsde-methods (PTC) |
 
-The pull-through cache uses the `quay/` and `ecr-public/` prefixes via the registry policy in [`container-registry-map/container-registry-map.json`](container-registry-map/container-registry-map.json). Custom images (`wham:fast-v5`) are pushed directly.
+The pull-through cache uses the `quay/` and `ecr-public/` prefixes via the registry policy in [`container-registry-map/container-registry-map.json`](container-registry-map/container-registry-map.json). All 12 production images are pulled from upstream — there is no longer a custom locally-built image (the `wham:fast-v5` build is retired; see `docs/wdl-audit.md`).
 
 To clone all upstream images into ECR for a fresh account:
 
@@ -240,21 +242,17 @@ To clone all upstream images into ECR for a fresh account:
 
 The script logs into ECR, iterates the image list, and uses `docker pull` + `docker push` to mirror each one.
 
-To rebuild `wham:fast-v5`:
+### Retired: `wham:fast-v5` (locally built fork)
 
-```bash
-# Pull the upstream wham source; apply our flush patch.
-git clone https://github.com/zeeev/wham wham-fork && cd wham-fork && git apply ../wham-patch/whamg-flush.patch && cd ..
-
-# Build with ARG ACCOUNT_ID.
-docker build --build-arg ACCOUNT_ID=$AWS_ACCOUNT_ID -f wham-patch/Dockerfile -t gatk-sv/wham:fast-v5 .
-
-# Push to ECR.
-docker tag gatk-sv/wham:fast-v5 $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/wham:fast-v5
-docker push $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/gatk-sv/wham:fast-v5
-```
-
-`whamg-flush.patch` adds `--flush-per-chr` (10 Mbp batches) so Wham doesn't OOM on full-genome calls. Three additional Dockerfile variants (`Dockerfile.fast`, `Dockerfile.lean`, `Dockerfile.streaming`) are explored alternatives kept for reference.
+The repo's `wham-patch/` directory still ships `whamg-flush.patch` plus four
+Dockerfiles (`Dockerfile`, `Dockerfile.fast`, `Dockerfile.lean`,
+`Dockerfile.streaming`). These produced an OpenMP `whamg-fast -x 16` build
+that ran ~10× faster than upstream. **It was reverted on 2026-05-26 after a
+body-MD5 validation against upstream `whamg` showed only 83 % record overlap
+on HG00096 (1,217 records only in upstream, 1,200 only in fast).** The
+patches are kept for reference and so a future re-validation cycle can
+revisit the fast-build approach with a proper cross-engine test gate. See
+[`docs/wdl-audit.md`](docs/wdl-audit.md) for the full divergence analysis.
 
 ## Reference bundle
 
@@ -297,7 +295,7 @@ For a brand-new account/region. ~$5 one-time staging + ~$70 for a 10-sample vali
 4. **Create the IAM run role** (`iam/policies/`).
 5. **Stage the reference bundle** (`scripts/stage_reference.py`).
 6. **Mirror container images** (`scripts/clone_gcr_images.sh`).
-7. **Build & push `wham:fast-v5`** (Dockerfile + ARG).
+7. **Verify upstream `gatk-sv/wham:2024-10-25-...` landed in ECR** (`scripts/bootstrap/04_build_wham.py`). Step 6 already mirrors it from upstream; the previous custom `fast-v5` build is retired.
 8. **Apply ECR pull-through cache + repository creation template** (registry policy from `container-registry-map/`).
 9. **Create the HealthOmics run cache** (CACHE_ALWAYS, ~$2/cohort savings).
 10. **Register the 10 workflow bundles**:
@@ -542,8 +540,9 @@ Common failure modes and what to look for:
 | Task `Terminated` at ~50s, no CloudWatch logs | RESTRICTED networking + `localization_optional: true` (GATK NIO tries to stream from S3) | Packager's HealthOmics rewrites strip `localization_optional` (already applied to all bundles in `wdl/bundles/`) |
 | `gunzip: cannot create file: Read-only file system` | HealthOmics FUSE mount is read-only | Use `zcat <input> > /tmp/<output>` instead of in-place `gunzip` (already applied to GBE/TrainGCNV) |
 | `OutOfBounds` in PESRPreprocessing | Mismatched array lengths from `discover_gse_outputs` (multiple test runs found per sample) | Use `discover_gse_outputs_per_sample` (latest run per sample, in `SAMPLES` order) |
-| Wham OOM at 16 GiB | CRAM > 20 GiB needs more memory | Tiered Wham memory: 16 GiB ≤20 GiB, 30 GiB >20 GiB. Implemented in `scripts/run_gse_cohort.py` |
-| Scramble OOM at 16 GiB | Parallel `cluster_identifier` needs more | Use the 64 GiB / 12 CPU workflow `9880958` |
+| Wham produces ~17 % different variants vs upstream | The retired `whamg-fast -x 16` OpenMP build runs differently from upstream | Reverted to upstream `whamg` 2026-05-26 (workflow `8098138`). See `docs/wdl-audit.md`. |
+| Scramble produces empty VCF (header only) | The `ScrambleTest12Par` HealthOmics workflow ran cluster_identifier on chr1–12 only and skipped `SCRAMble.R` | Run scramble via `scripts/run_scramble_ec2.sh` (EC2 hybrid). See `docs/wdl-audit.md`. |
+| HealthOmics `Scramble.wdl` killed at 48s | Multi-task workflows with inter-task data flow trip the 47s kill | Use `scripts/run_scramble_ec2.sh` (direct `docker run` via SSM) |
 | GATK SVCluster: `Index file does not exist` | Intermediate VCFs lack co-located `.tbi` | Add `gatk IndexFeatureFile` before SVCluster (applied to ClusterBatch v3, MergeBatchSites v2) |
 | GATK crash on tabix files | 36-byte placeholder `.tbi` files | Replace with real tabix indexes built via `pysam.tabix_index()` |
 | HealthOmics rejects "32 GiB" | String must match `(\d+(\.\d+)?)\s+GiB` exactly | Use "30 GiB" |
@@ -601,7 +600,11 @@ The four context-transfer docs at [`docs/context-transfer-session{3,4,5,6}.md`](
 │   ├── launch_*.py                       # Per-version MakeCohortVcf launchers (v11–v17)
 │   └── build_*.py                        # Per-version bundle builders
 ├── wham-patch/                           # whamg-flush.patch + 4 Dockerfiles
-│                                         #   Reproduces wham:fast-v5
+│                                         #   Retired wham:fast-v5 reference
+│                                         #   (production now uses upstream gatk-sv/wham
+│                                         #   image cloned via container-registry-map;
+│                                         #   see docs/wdl-audit.md for divergence
+│                                         #   analysis and revert rationale)
 ├── python/                               # gatk-sv-aws Python package
 │   ├── pyproject.toml                    #   Hatchling build, requires Python ≥3.11
 │   ├── src/gatk_sv_aws/
@@ -674,7 +677,7 @@ sv_pipeline:   gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604
 sv_base:       gatk-sv/sv-base:2024-10-25-v0.29-beta-5ea22a52
 sv_base_mini:  gatk-sv/sv-base-mini:2024-10-25-v0.29-beta-5ea22a52
 manta:         gatk-sv/manta:2023-09-14-v0.28.3-beta-3f22f94d
-wham:          gatk-sv/wham:fast-v5  (built from wham-patch/whamg-flush.patch)
+wham:          gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52  (upstream Broad image; the locally-built fast-v5 was retired 2026-05-26 — see docs/wdl-audit.md)
 scramble:      gatk-sv/scramble:2024-10-25-v0.29-beta-5ea22a52
 cnmops:        gatk-sv/cnmops:2025-09-02-v1.0.5-f091af0b
 linux:         ecr-public/lts/ubuntu:18.04

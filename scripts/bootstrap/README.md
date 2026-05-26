@@ -28,7 +28,7 @@ python scripts/bootstrap/02_stage_reference.py
 # 4. Configure ECR pull-through caches and clone the 12 GATK-SV images
 python scripts/bootstrap/03_setup_ecr.py
 
-# 5. Build and push the patched Wham image (only image we build ourselves)
+# 5. Verify the upstream Wham image landed in ECR (used to build a fork; reverted 2026-05-26)
 python scripts/bootstrap/04_build_wham.py
 
 # 6. Synthesize the IAM run role
@@ -69,7 +69,7 @@ python scripts/run_cohort_e2e.py \
 | 01 | Creates 4 S3 buckets, sets Intelligent-Tiering on outputs | Skips buckets that already exist |
 | 02 | Copies ~28 reference files from upstream Broad GS/S3 | Skips files already at target with matching SHA |
 | 03 | Creates Docker Hub / GCR / ECR Public pull-through caches; clones 12 images | Skips already-mirrored images |
-| 04 | Builds `gatk-sv/wham:fast-v5` from `wham-patch/whamg-flush.patch` and pushes to ECR | Skips if already in ECR |
+| 04 | Verifies upstream `gatk-sv/wham:2024-10-25-...` exists in ECR. The previous custom `fast-v5` build was reverted 2026-05-26 (logic regression — see `docs/wdl-audit.md`). | Read-only check |
 | 05 | Creates `gatk-sv-healthomics-run-role` with synthesized least-privilege policy | Idempotent (PutRolePolicy) |
 | 06 | Creates a HealthOmics run cache with `CACHE_ALWAYS` | Skips if already exists |
 | 07 | Launches m5.2xlarge with Docker pre-installed, then stops it | Skips if instance already tagged `gatk-sv:role=ec2-hybrid` |

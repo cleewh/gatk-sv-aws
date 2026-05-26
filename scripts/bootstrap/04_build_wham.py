@@ -1,34 +1,30 @@
 #!/usr/bin/env python3
-"""Build the patched whamg-flush image and push to the customer's ECR.
+"""Verify the upstream Wham image is in the customer's ECR.
 
-The repo ships ``wham-patch/whamg-flush.patch`` plus four Dockerfiles
-(``Dockerfile``, ``Dockerfile.fast``, ``Dockerfile.lean``,
-``Dockerfile.streaming``).  Production uses ``Dockerfile.fast`` which produces
-``gatk-sv/wham:fast-v5``.
+History: this step used to build a custom ``gatk-sv/wham:fast-v5`` image
+from ``wham-patch/whamg-flush.patch`` (an OpenMP region-parallel build of
+``whamg``). On 2026-05-26 a body-MD5 validation against the upstream
+``whamg`` showed only 83 % record overlap — a real algorithmic divergence,
+not numerical noise. Production reverted to the upstream binary.
 
-This script:
-  1. Logs into ECR.
-  2. Fetches the upstream wham source at the commit referenced by the patch.
-  3. Applies the patch.
-  4. Builds with ``--build-arg ACCOUNT_ID=<account>`` (Dockerfile uses the
-     customer's ECR as base for the original wham image).
-  5. Pushes to ``<account>.dkr.ecr.<region>.amazonaws.com/gatk-sv/wham:fast-v5``.
+The upstream Wham image (``gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52``)
+is mirrored into ECR by step 3 (``03_setup_ecr.py``) along with the rest
+of the GATK-SV image set. This step now just *verifies* that the image
+landed in ECR and is HealthOmics-accessible.
 
-Idempotent: skips if the target tag already exists in ECR.
-
-Customer must have Docker running and the AWS CLI configured.
+Customers who want to revisit the OpenMP fast-build can still rebuild from
+``wham-patch/`` manually — see ``docs/wdl-audit.md`` for the divergence
+analysis and what would be required to validate a future fast-build before
+rolling it back into production.
 """
 from __future__ import annotations
 
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 
-def run(cmd: list[str], **kwargs) -> int:
-    print(">", " ".join(cmd))
-    return subprocess.call(cmd, **kwargs)
+WHAM_IMAGE_TAG = "2024-10-25-v0.29-beta-5ea22a52"
 
 
 def main() -> int:
@@ -38,57 +34,36 @@ def main() -> int:
         print("ERROR: AWS_ACCOUNT_ID env var required", file=sys.stderr)
         return 1
 
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    wham_dir = repo_root / "wham-patch"
-    ecr_host = f"{account}.dkr.ecr.{region}.amazonaws.com"
-    target_tag = f"{ecr_host}/gatk-sv/wham:fast-v5"
+    target_uri = (
+        f"{account}.dkr.ecr.{region}.amazonaws.com/gatk-sv/wham:{WHAM_IMAGE_TAG}"
+    )
 
-    # Check whether the image already exists in ECR
     rc = subprocess.call(
         [
             "aws", "ecr", "describe-images",
             "--repository-name", "gatk-sv/wham",
-            "--image-ids", "imageTag=fast-v5",
+            "--image-ids", f"imageTag={WHAM_IMAGE_TAG}",
             "--region", region,
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
     if rc == 0:
-        print(f"  {target_tag} already exists in ECR; skipping build.")
+        print(f"  OK: {target_uri}")
+        print("  (Step 3 already cloned upstream wham; nothing to build.)")
         return 0
 
-    # Login to ECR
-    login_cmd = (
-        f"aws ecr get-login-password --region {region} | "
-        f"docker login --username AWS --password-stdin {ecr_host}"
+    print(
+        f"ERROR: {target_uri} not found in ECR.",
+        file=sys.stderr,
     )
-    print(">", login_cmd)
-    if subprocess.call(login_cmd, shell=True) != 0:
-        return 2
-
-    # Build
-    rc = run(
-        [
-            "docker", "build",
-            "--platform", "linux/amd64",
-            "-f", str(wham_dir / "Dockerfile.fast"),
-            "--build-arg", f"ACCOUNT_ID={account}",
-            "-t", target_tag,
-            str(wham_dir),
-        ],
-        cwd=str(repo_root),
+    print(
+        "  Re-run scripts/bootstrap/03_setup_ecr.py — the upstream Wham image "
+        "is mirrored from gcr.io/broad-dsde-methods alongside every other "
+        "GATK-SV Docker image.",
+        file=sys.stderr,
     )
-    if rc != 0:
-        return rc
-
-    # Push
-    rc = run(["docker", "push", target_tag])
-    if rc != 0:
-        return rc
-
-    print(f"\nBuilt and pushed: {target_tag}")
-    return 0
+    return 2
 
 
 if __name__ == "__main__":
