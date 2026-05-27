@@ -124,20 +124,29 @@ def copy_one(src_obj: dict, dest_bucket: str) -> tuple[str, str, str]:
 
 
 def write_manifest(samples: list[str], dest_bucket: str) -> Path:
-    """Write a manifest compatible with run_cohort_e2e.py / run_gse_cohort.py."""
+    """Write a manifest compatible with run_cohort_e2e.py / run_gse_cohort.py.
+
+    Writes the manifest with __ACCOUNT_ID__ placeholders so the file can be
+    committed without exposing the operator's account. Customers run
+    scripts/bootstrap/00_substitute_placeholders.py to populate it.
+    """
     manifest_path = ROOT / "validation-cohort" / "inputs" / "manifest-gatk-sv-156.json"
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    base = f"s3://{dest_bucket}/{DEST_PREFIX.rstrip('/')}"
+    account = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
+    # Replace the operator's account in the dest_bucket name with __ACCOUNT_ID__
+    # so the persisted manifest stays customer-agnostic.
+    base_with_account = f"s3://{dest_bucket}/{DEST_PREFIX.rstrip('/')}"
+    base_with_placeholder = base_with_account.replace(account, "__ACCOUNT_ID__")
     manifest = {
         "cohort_id": "gatk-sv-156",
         "source": "s3://gatk-sv-data-us-east-1/cram/ (Registry of Open Data on AWS)",
-        "destination_base": base,
+        "destination_base": base_with_placeholder,
         "sample_count": len(samples),
         "samples": [
             {
                 "sample_id": sid,
-                "cram": f"{base}/{sid}.final.cram",
-                "crai": f"{base}/{sid}.final.cram.crai",
+                "cram": f"{base_with_placeholder}/{sid}.final.cram",
+                "crai": f"{base_with_placeholder}/{sid}.final.cram.crai",
             }
             for sid in samples
         ],
