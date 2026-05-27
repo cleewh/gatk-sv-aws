@@ -1,0 +1,9 @@
+{
+  "module": "SVConcordance",
+  "divergences": [],
+  "files": [
+    "SVConcordance.wdl",
+    "Structs.wdl",
+    "TasksMakeCohortVcf.wdl"
+  ]
+}

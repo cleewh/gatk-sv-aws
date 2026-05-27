@@ -1,0 +1,19 @@
+{
+  "module": "EvidenceQC",
+  "divergences": [
+    {
+      "change_kind": "remove_caller",
+      "file": "EvidenceQC.wdl",
+      "reason": "MELT excluded per Req 23.3"
+    }
+  ],
+  "files": [
+    "EvidenceQC.wdl",
+    "MakeBincovMatrix.wdl",
+    "MedianCov.wdl",
+    "PloidyEstimation.wdl",
+    "RawVcfQC.wdl",
+    "Structs.wdl",
+    "WGD.wdl"
+  ]
+}

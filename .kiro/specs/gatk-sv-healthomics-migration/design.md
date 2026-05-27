@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design describes the Migration_System that ports the Broad Institute's GATK_SV pipeline (WDL, originally Terra/Cromwell on GCP) to AWS HealthOmics in Target_Region (ap-southeast-1). The system registers every module in Migrated_Modules (GatherSampleEvidence → AnnotateVcf) as a HealthOmics workflow, integrates the callers in SV_Caller_Set (Manta, Wham, Scramble, GATK-gCNV) while excluding MELT, stages the Reference_Bundle in regional S3, routes container pulls through ECR + Pull_Through_Caches, and runs cohorts behind a least-privilege IAM role with Run_Cache enabled. The Cost_Optimizer drives end-to-end per-sample cost to at or below Per_Sample_Cost_Target (USD $7.00) using DYNAMIC storage, RESTRICTED_Networking, CACHE_ALWAYS caching, and an AnalyzeRunPerformance-driven right-sizing loop with 20% headroom (Reqs 1, 2, 2a, 3, 5, 8–12).
+This design describes the Migration_System that ports the Broad Institute's GATK_SV pipeline (WDL, originally Terra/Cromwell on GCP) to AWS HealthOmics in Target_Region (ap-southeast-1). The system registers every module in Migrated_Modules (GatherSampleEvidence → AnnotateVcf) as a HealthOmics workflow, integrates the callers in SV_Caller_Set (Manta, Wham, Scramble, GATK-gCNV) while excluding MELT, stages the Reference_Bundle in regional S3, routes container pulls through ECR + Pull_Through_Caches, and runs cohorts behind a least-privilege IAM role with Run_Cache enabled. The Cost_Optimizer drives end-to-end per-sample cost to at or below Per_Sample_Cost_Target (USD $7.00) using DYNAMIC storage, RESTRICTED_Networking, CACHE_ALWAYS caching, and an AnalyzeRunPerformance-driven right-sizing loop with 20% headroom (Reqs 1, 2, 23, 3, 5, 8–12).
 
 ## Architecture
 
@@ -11,7 +11,7 @@ This design describes the Migration_System that ports the Broad Institute's GATK
 ```mermaid
 flowchart LR
     subgraph Authoring["Authoring & Packaging (local / CI)"]
-        PKG["WDL Packager &amp; Linter<br/>(Req 2, 2a)"]
+        PKG["WDL Packager &amp; Linter<br/>(Req 2, 23)"]
         CRMB["Container Registry Map Builder<br/>(Req 3)"]
         PTG["Parameter Template Generator<br/>+ Validator (Req 4, 18)"]
         RBS["Reference Bundle Stager<br/>(Req 5)"]
@@ -19,7 +19,7 @@ flowchart LR
     end
 
     subgraph Registration["Registration (ap-southeast-1)"]
-        REG["Workflow Registrar<br/>(per Migrated_Module)<br/>(Req 2a, 16)"]
+        REG["Workflow Registrar<br/>(per Migrated_Module)<br/>(Req 23, 16)"]
         RC["Run Cache Setup<br/>CACHE_ALWAYS (Req 10)"]
     end
 
@@ -78,13 +78,13 @@ sequenceDiagram
 
 ### Registration-Per-Module Model
 
-Each module in Migrated_Modules is registered as its own HealthOmics workflow (Req 2a.1, 16). The Run Orchestrator chains module runs in sequence using the previous module's outputs as the next module's inputs. This keeps each workflow small enough for HealthOmics to lint cleanly, isolates right-sizing per module, and lets workflow versions advance independently.
+Each module in Migrated_Modules is registered as its own HealthOmics workflow (Req 23.1, 16). The Run Orchestrator chains module runs in sequence using the previous module's outputs as the next module's inputs. This keeps each workflow small enough for HealthOmics to lint cleanly, isolates right-sizing per module, and lets workflow versions advance independently.
 
 ## Components and Interfaces
 
 ### (a) WDL Packager & Linter
 
-**Responsibilities:** Fetch GATK_SV sources at a pinned commit, excise MELT-referencing tasks (Req 2a.3–2a.4), rewrite constructs HealthOmics rejects, and package each module's WDL bundle as a ZIP for Workflow_Registration. Enforces WDL 1.0/1.1 (Req 2.1), rejects gs:// URIs at packaging time (Req 2.6), and invokes `LintAHOWorkflowBundle` with zero-error gating (Req 2.3).
+**Responsibilities:** Fetch GATK_SV sources at a pinned commit, excise MELT-referencing tasks (Req 23.3–23.4), rewrite constructs HealthOmics rejects, and package each module's WDL bundle as a ZIP for Workflow_Registration. Enforces WDL 1.0/1.1 (Req 2.1), rejects gs:// URIs at packaging time (Req 2.6), and invokes `LintAHOWorkflowBundle` with zero-error gating (Req 2.3).
 
 **Inputs:** Upstream `gatk-sv` repo URL and commit SHA, module name ∈ Migrated_Modules.
 **Outputs:** `bundle.zip`, `divergence.json` (list of applied edits), lint report.
@@ -303,7 +303,7 @@ Every `"type": "File"` entry is required to be an s3:// URI in Target_Region at 
   "module": "GatherSampleEvidence",
   "upstream_path": "wdl/GatherSampleEvidence.wdl",
   "change_kind": "remove_task" | "rewrite_construct" | "swap_container" | "remove_caller",
-  "reason": "MELT excluded per Req 2a.3",
+  "reason": "MELT excluded per Req 23.3",
   "upstream_commit": "abcdef1"
 }
 ```
@@ -338,7 +338,7 @@ Every `"type": "File"` entry is required to be an s3:// URI in Target_Region at 
 | MakeCohortVcf | `gatk-sv-make-cohort-vcf` | `gatk-sv/sv-pipeline` | reference FASTA, pedigree | cohort-level SV VCF + tabix | MELT site records absent |
 | AnnotateVcf | `gatk-sv-annotate-vcf` | `gatk-sv/sv-pipeline`, `ensemblorg/ensembl-vep` | annotation resources (gnomAD-SV, GENCODE) | annotated Cohort_VCF | — |
 
-Every task whose `runtime.docker` references MELT is removed (Req 2a.3–2a.4). Every inter-module boundary file produced by a MELT task is either removed from downstream inputs or replaced with an empty/sentinel input where the WDL requires a non-null value; each such change is recorded in the divergence log (Req 2a.4, 17.2).
+Every task whose `runtime.docker` references MELT is removed (Req 23.3–23.4). Every inter-module boundary file produced by a MELT task is either removed from downstream inputs or replaced with an empty/sentinel input where the WDL requires a non-null value; each such change is recorded in the divergence log (Req 23.4, 17.2).
 
 ## Cost Optimization Strategy
 
@@ -494,7 +494,7 @@ The following properties are universally quantified rules that MUST hold for eve
 
 *For any* migrated WDL bundle produced by the packager, no `task` declaration, no `call` statement, no `runtime.docker` value, and no input-file path SHALL contain the substring `MELT` or `melt` (case-insensitive match on the token, not on incidental substrings in field names); and for any upstream bundle containing N MELT-referencing tasks, the divergence log for the packaged output SHALL contain N entries whose `change_kind` is `remove_caller` and whose `reason` references MELT.
 
-**Validates: Requirements 2a.3, 2a.4**
+**Validates: Requirements 23.3, 23.4**
 
 ### Property 10: Cost-tag coverage
 
@@ -603,7 +603,7 @@ The resulting JSON MUST satisfy Property 4 (no floating tags) and Property 5 (cl
 Run the WDL Packager & Linter (component a):
 
 1. Fetch `gatk-sv` at the pinned commit SHA.
-2. Strip every MELT-referencing task, `call`, input channel, and container reference; record each removal in `divergence.json` (Reqs 2a.3, 2a.4, Property 9).
+2. Strip every MELT-referencing task, `call`, input channel, and container reference; record each removal in `divergence.json` (Reqs 23.3, 23.4, Property 9).
 3. Rewrite any GCS URI literal to either its staged S3 equivalent (for reference paths) or reject the WDL if the literal cannot be resolved (Req 2.6).
 4. For each module in Migrated_Modules, emit `<module>-bundle.zip` containing the main WDL and any imported sub-WDLs.
 
@@ -692,7 +692,7 @@ Cost is attributed by joining AWS Cost Explorer line items to the Property 10 ta
 
 The Migration_System explicitly does not cover:
 
-- **MELT** (Mobile Element Locator Tool). Excluded per Reqs 2a.3–2a.5. The accepted tradeoff is reduced sensitivity to mobile-element insertions. The upstream MELT license terms and HealthOmics-incompatible dependencies are documented in the divergence log.
+- **MELT** (Mobile Element Locator Tool). Excluded per Reqs 23.3–23.5. The accepted tradeoff is reduced sensitivity to mobile-element insertions. The upstream MELT license terms and HealthOmics-incompatible dependencies are documented in the divergence log.
 - **GRCh37 as the default reference build.** GRCh38 is the default (Req 5.5). GRCh37 is documented as an optional configuration (Req 5.6) but is not validated against the $7/sample target and is not covered by the ≤10-sample validation cohort (Req 13.1).
 - **Somatic structural variant calling.** GATK-SV is a germline pipeline; this migration does not introduce tumor-normal or paired-sample somatic SV calling.
 - **Single-sample mode outside a cohort.** The upstream pipeline's single-sample path is not re-implemented; the migrated system assumes cohort batches of 100–500 samples (Req 6.4). Operators wanting to genotype a single sample against a frozen cohort model use the production cohort workflow with a batch of one plus the reference cohort panel, not a standalone single-sample mode.

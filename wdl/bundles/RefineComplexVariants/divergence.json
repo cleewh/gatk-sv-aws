@@ -1,0 +1,13 @@
+{
+  "module": "RefineComplexVariants",
+  "divergences": [],
+  "files": [
+    "CollectLargeCNVSupportForCPX.wdl",
+    "CollectPEMetricsForCPX.wdl",
+    "CollectPEMetricsPerBatchCPX.wdl",
+    "RefineComplexVariants.wdl",
+    "Structs.wdl",
+    "TasksMakeCohortVcf.wdl",
+    "Utils.wdl"
+  ]
+}

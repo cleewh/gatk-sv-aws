@@ -30,7 +30,9 @@ The deliverable is a HealthOmics-registered, production-grade set of workflows m
 - **VPC_Networking**: The HealthOmics networking mode that runs tasks in a customer VPC subnet.
 - **Per_Sample_Cost_Target**: USD $7.00 per sample, measured end-to-end and amortized across all migrated GATK-SV modules for a production cohort run, via AWS Cost Explorer tags applied by the Migration_System.
 - **SV_Caller_Set**: The set of structural variant callers in scope for the Migration_System: Manta, Wham, Scramble, and GATK-gCNV. MELT is explicitly excluded.
-- **Migrated_Modules**: The set of GATK-SV modules in scope for the Migration_System: GatherSampleEvidence, GatherBatchEvidence, ClusterBatch, GenerateBatchMetrics, FilterBatch, MergeBatchSites, GenotypeBatch, RegenotypeCNVs, MakeCohortVcf, and AnnotateVcf.
+- **Migrated_Modules**: The set of GATK-SV modules in scope for the Migration_System. Per the v1.0 upstream pipeline release (2026-05), this set is GatherSampleEvidence, EvidenceQC, TrainGCNV, GatherBatchEvidence, ClusterBatch, GenerateBatchMetrics, FilterBatch, MergeBatchSites, GenotypeBatch, RegenotypeCNVs, MakeCohortVcf (covering CombineBatches + ResolveComplexVariants + GenotypeComplexVariants + CleanVcf as a hybrid), RefineComplexVariants, JoinRawCalls, SVConcordance, ScoreGenotypes, FilterGenotypes, AnnotateVcf, MainVcfQC, and VisualizeCnvs (19 modules total).
+- **GQ_Recalibrator**: The chain JoinRawCalls → SVConcordance → ScoreGenotypes → FilterGenotypes that scores and filters genotype quality (GQ) using a learned recalibrator model. Added to upstream GATK-SV in 2025-Q4 and to the Migration_System in this amendment.
+- **Module_Phase**: A logical grouping of Migrated_Modules by execution boundary: Phase A (per-sample, GatherSampleEvidence + EvidenceQC), Phase B (cohort, TrainGCNV through MakeCohortVcf), Phase C (per-cohort post-processing, RefineComplexVariants through FilterGenotypes), Phase D (per-cohort delivery, AnnotateVcf + MainVcfQC + VisualizeCnvs).
 
 ## Requirements
 
@@ -58,13 +60,13 @@ The deliverable is a HealthOmics-registered, production-grade set of workflows m
 5. WHERE a GATK_SV task depends on the Cromwell call-caching hash, THE Migration_System SHALL replace that dependency with a HealthOmics Run_Cache configuration.
 6. IF a workflow references a GCS (gs://) URI directly, THEN THE Migration_System SHALL reject the workflow during packaging with a message identifying the offending URI.
 
-### Requirement 2a: Module and Caller Scope
+### Requirement 23: Module and Caller Scope
 
 **User Story:** As an Operator, I want the module and caller scope of the Migration_System to be explicit, so that I know which parts of the upstream GATK_SV pipeline are supported and which are not.
 
 #### Acceptance Criteria
 
-1. THE Migration_System SHALL migrate every module in Migrated_Modules (GatherSampleEvidence, GatherBatchEvidence, ClusterBatch, GenerateBatchMetrics, FilterBatch, MergeBatchSites, GenotypeBatch, RegenotypeCNVs, MakeCohortVcf, AnnotateVcf) end-to-end.
+1. THE Migration_System SHALL migrate every module in Migrated_Modules (the 19 modules enumerated in the Glossary, covering Phase A through Phase D) end-to-end.
 2. THE Migration_System SHALL integrate the callers in SV_Caller_Set (Manta, Wham, Scramble, GATK-gCNV) into the migrated modules.
 3. THE Migration_System SHALL exclude MELT (Mobile Element Locator Tool) from every migrated module.
 4. IF an upstream WDL task references the MELT caller, THEN THE Migration_System SHALL remove or bypass the task and SHALL document the removal in the divergence log.
@@ -263,3 +265,20 @@ The deliverable is a HealthOmics-registered, production-grade set of workflows m
 3. FOR ALL WDL workflows in the Migration_System, generating a Parameter_Template and then validating the generated template against the same WDL workflow SHALL report a match.
 4. WHEN a Parameter_Template is manually edited to remove a required input, THE Parameter_Template validator SHALL report the missing input.
 5. WHEN a Parameter_Template is manually edited to add an input not declared in the WDL, THE Parameter_Template validator SHALL report the extra input.
+
+### Requirement 19: GATK-SV v1.0 Pipeline Completeness
+
+**User Story:** As an Operator, I want the Migration_System to cover every module in the upstream GATK-SV v1.0 pipeline, including the GQ_Recalibrator and the per-cohort QC modules, so that my cohort VCF includes the same quality-score recalibration, post-processing refinement, and QC artifacts that the upstream pipeline produces.
+
+#### Acceptance Criteria
+
+1. THE Migration_System SHALL migrate the EvidenceQC module as a standalone HealthOmics workflow that runs after Phase A and before Phase B, producing per-sample QC metrics that the Operator inspects before committing to expensive cohort modules.
+2. THE Migration_System SHALL migrate the RefineComplexVariants module as a HealthOmics workflow that runs after CleanVcf and refines complex SV calls.
+3. THE Migration_System SHALL migrate the GQ_Recalibrator chain (JoinRawCalls → SVConcordance → ScoreGenotypes → FilterGenotypes) as a sequence of HealthOmics workflows that run after RefineComplexVariants and before AnnotateVcf, producing a quality-score-recalibrated cohort VCF as the input to AnnotateVcf.
+4. THE Migration_System SHALL migrate the MainVcfQC module as a HealthOmics workflow that runs after AnnotateVcf and produces cohort-level QC plots as part of every production cohort run.
+5. THE Migration_System SHALL migrate the VisualizeCnvs module as a HealthOmics workflow that runs after AnnotateVcf and produces per-CNV visualization artifacts on demand. WHERE an Operator does not require per-CNV visualization, THE Migration_System SHALL allow the VisualizeCnvs run to be skipped.
+6. THE Migration_System SHALL register the RegenotypeCNVs module as an active HealthOmics workflow with parameter values appropriate for cohorts of at least 100 samples; on cohorts smaller than 100 samples THE Migration_System SHALL skip the RegenotypeCNVs run and document the skip in the run report.
+7. WHEN any module in Requirement 19 fails or is skipped, THE Migration_System SHALL record the module identifier, the skip or failure reason, and the impact on downstream artifacts in the run report.
+8. THE Migration_System SHALL extend the validation cohort acceptance test to cover concordance of the GQ_Recalibrator-output cohort VCF against the upstream-pipeline reference VCF, with the same per-SV-type concordance gates declared in Requirement 13.
+9. THE Migration_System SHALL declare the EvidenceQC, RefineComplexVariants, JoinRawCalls, SVConcordance, ScoreGenotypes, FilterGenotypes, MainVcfQC, and VisualizeCnvs workflows in the Container_Registry_Map and the IAM role scope so that Requirements 3, 11, and 12 are satisfied for the extended module set.
+10. THE Migration_System SHALL update the documentation deliverables in Requirement 17 to enumerate the 19-module Migrated_Modules set, the four Module_Phase boundaries, and the GQ_Recalibrator chain.

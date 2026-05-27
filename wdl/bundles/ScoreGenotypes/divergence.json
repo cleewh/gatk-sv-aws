@@ -1,0 +1,12 @@
+{
+  "module": "ScoreGenotypes",
+  "divergences": [],
+  "files": [
+    "RecalibrateGq.wdl",
+    "ScoreGenotypes.wdl",
+    "Structs.wdl",
+    "TasksMakeCohortVcf.wdl",
+    "TrainGqRecalibrator.wdl",
+    "Utils.wdl"
+  ]
+}

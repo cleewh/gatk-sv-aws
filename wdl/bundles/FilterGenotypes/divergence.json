@@ -1,0 +1,26 @@
+{
+  "module": "FilterGenotypes",
+  "divergences": [
+    {
+      "change_kind": "rejected_uri",
+      "file": "FilterGenotypes.wdl",
+      "reason": "gs:// URI present; reject per Req 2.6"
+    },
+    {
+      "change_kind": "rejected_uri",
+      "file": "MainVcfQc.wdl",
+      "reason": "gs:// URI present; reject per Req 2.6"
+    }
+  ],
+  "files": [
+    "CollectPerSampleBenchmarking.wdl",
+    "CollectQcPerSample.wdl",
+    "CollectQcVcfWide.wdl",
+    "CollectSiteLevelBenchmarking.wdl",
+    "FilterGenotypes.wdl",
+    "MainVcfQc.wdl",
+    "Structs.wdl",
+    "TasksMakeCohortVcf.wdl",
+    "Utils.wdl"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "module": "VisualizeCnvs",
+  "divergences": [],
+  "files": [
+    "Structs.wdl",
+    "VisualizeCnvs.wdl"
+  ]
+}

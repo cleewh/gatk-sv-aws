@@ -1,0 +1,20 @@
+{
+  "module": "MainVcfQC",
+  "divergences": [
+    {
+      "change_kind": "rejected_uri",
+      "file": "MainVcfQc.wdl",
+      "reason": "gs:// URI present; reject per Req 2.6"
+    }
+  ],
+  "files": [
+    "CollectPerSampleBenchmarking.wdl",
+    "CollectQcPerSample.wdl",
+    "CollectQcVcfWide.wdl",
+    "CollectSiteLevelBenchmarking.wdl",
+    "MainVcfQc.wdl",
+    "Structs.wdl",
+    "TasksMakeCohortVcf.wdl",
+    "Utils.wdl"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "module": "JoinRawCalls",
+  "divergences": [
+    {
+      "change_kind": "remove_caller",
+      "file": "JoinRawCalls.wdl",
+      "reason": "MELT excluded per Req 23.3"
+    }
+  ],
+  "files": [
+    "FormatVcfForGatk.wdl",
+    "JoinRawCalls.wdl",
+    "Structs.wdl",
+    "TasksClusterBatch.wdl",
+    "TasksMakeCohortVcf.wdl"
+  ]
+}

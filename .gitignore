@@ -58,3 +58,9 @@ stage-gatk-sv-156-runs.json
 validation-fix-runs.json
 cost-report-*.json
 gse-cohort-runs-customer-sim.json
+
+# Phase 8 (Req 19) packager scratch — the unpacked WDL source trees we use
+# for inspection and future re-packaging. Bundle ZIPs and divergence.json
+# are committed; the source trees are not (they're regenerable from upstream).
+wdl/bundles/*/v1-build-src/
+phase8-migration-report-*.json
