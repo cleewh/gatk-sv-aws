@@ -213,6 +213,33 @@ The Migration System registers **each upstream module as its own HealthOmics wor
 
 All 10 packaged bundles lint clean (`LintAHOWorkflowBundle → success`). Total bundle size: 251 KB. Total MELT divergences: 63. The full divergence record is at [`docs/divergence-log.md`](docs/divergence-log.md).
 
+### v1.0 amendment: 8 additional modules (Req 19, 2026-05-26)
+
+Customer feedback on 2026-05-26 flagged that upstream GATK-SV v1.0 includes
+22 modules total; the original 10 above missed 8 critical ones, including
+the **GQ_Recalibrator** chain that produces quality-recalibrated genotypes.
+The amendment ports them from upstream `gatk-sv@v1.1` (commit `a1be457`).
+
+| # | Module | Phase | Bundle | Role |
+|---|---|---|---|---|
+| 11 | `EvidenceQC`            | A.6 | `wdl/bundles/EvidenceQC/` | Per-sample QC after Phase A; gates Phase B |
+| 12 | `RefineComplexVariants` | C.1 | `wdl/bundles/RefineComplexVariants/` | Post-CleanVcf complex SV refinement |
+| 13 | `JoinRawCalls`          | C.2 | `wdl/bundles/JoinRawCalls/` | GQ_Recalibrator step 1/4 |
+| 14 | `SVConcordance`         | C.3 | `wdl/bundles/SVConcordance/` | GQ_Recalibrator step 2/4 |
+| 15 | `ScoreGenotypes`        | C.4 | `wdl/bundles/ScoreGenotypes/` | GQ_Recalibrator step 3/4 |
+| 16 | `FilterGenotypes`       | C.5 | `wdl/bundles/FilterGenotypes/` | GQ_Recalibrator step 4/4 |
+| 17 | `MainVcfQC`             | D.2 | `wdl/bundles/MainVcfQC/` | Cohort-level QC plots |
+| 18 | `VisualizeCnvs`         | D.3 (opt) | `wdl/bundles/VisualizeCnvs/` | Per-CNV PNG plots (opt-in) |
+
+Plus **RegenotypeCNVs** (#19) is activated for cohorts ≥ 100 samples.
+
+All 8 new bundles lint clean. The packager source is at
+[`scripts/migrate_v1_modules.py`](scripts/migrate_v1_modules.py); parameter
+templates at `parameter-templates/`. Registration via
+[`scripts/bootstrap/08_register_workflows.py`](scripts/bootstrap/08_register_workflows.py)
+which is now aware of all 18 module bundles. See
+[`docs/wdl-audit.md`](docs/wdl-audit.md) for the divergence record.
+
 ## Container images
 
 12 images mirrored to private ECR with HealthOmics access grants applied. The Container Registry Map at [`container-registry-map/container-registry-map.json`](container-registry-map/container-registry-map.json) is the source of truth.

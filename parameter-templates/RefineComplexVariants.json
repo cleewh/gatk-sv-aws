@@ -1,0 +1,167 @@
+{
+  "Depth_DEL_beds": {
+    "description": "Input Depth_DEL_beds for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "Depth_DUP_beds": {
+    "description": "Input Depth_DUP_beds for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "PE_metrics": {
+    "description": "Input PE_metrics for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "PE_metrics_indexes": {
+    "description": "Input PE_metrics_indexes for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "batch_name_list": {
+    "description": "Input batch_name_list for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Array[String]"
+  },
+  "batch_sample_lists": {
+    "description": "Input batch_sample_lists for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "linux_docker": {
+    "description": "Input linux_docker for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "String"
+  },
+  "min_pe_cpx": {
+    "description": "Input min_pe_cpx for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "Int"
+  },
+  "min_pe_ctx": {
+    "description": "Input min_pe_ctx for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "Int"
+  },
+  "n_per_split": {
+    "description": "Input n_per_split for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "Int"
+  },
+  "prefix": {
+    "description": "Input prefix for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "String"
+  },
+  "runtime_attr_calcu_cpx_evidences": {
+    "description": "Input runtime_attr_calcu_cpx_evidences for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_calcu_pe_stat": {
+    "description": "Input runtime_attr_calcu_pe_stat for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_collect_pe": {
+    "description": "Input runtime_attr_collect_pe for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_concat": {
+    "description": "Input runtime_attr_concat for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_concat_bed_Step1": {
+    "description": "Input runtime_attr_concat_bed_Step1 for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_concat_bed_Step2": {
+    "description": "Input runtime_attr_concat_bed_Step2 for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_concat_evidence": {
+    "description": "Input runtime_attr_concat_evidence for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_extract_cpx_lg_cnv_by_batch": {
+    "description": "Input runtime_attr_extract_cpx_lg_cnv_by_batch for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_fix_header": {
+    "description": "Input runtime_attr_fix_header for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_generate_cnv_segments_from_cpx": {
+    "description": "Input runtime_attr_generate_cnv_segments_from_cpx for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_generate_cpx_review_script": {
+    "description": "Input runtime_attr_generate_cpx_review_script for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_get_vcf_header_with_members_info_line": {
+    "description": "Input runtime_attr_get_vcf_header_with_members_info_line for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_preconcat": {
+    "description": "Input runtime_attr_preconcat for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_sample_batch": {
+    "description": "Input runtime_attr_sample_batch for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_scatter_vcf": {
+    "description": "Input runtime_attr_scatter_vcf for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_seek_depth_supp_for_cpx": {
+    "description": "Input runtime_attr_seek_depth_supp_for_cpx for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_split_cpx_ctx": {
+    "description": "Input runtime_attr_split_cpx_ctx for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_split_script": {
+    "description": "Input runtime_attr_split_script for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_vcf2bed": {
+    "description": "Input runtime_attr_vcf2bed for workflow RefineComplexVariants",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "String"
+  },
+  "vcf": {
+    "description": "Input vcf for workflow RefineComplexVariants",
+    "optional": false,
+    "type": "File"
+  }
+}

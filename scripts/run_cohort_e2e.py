@@ -127,6 +127,55 @@ WORKFLOWS = {
     "visualize_cnvs": None,
 }
 
+
+def _load_workflow_ids_from_bootstrap() -> None:
+    """Override WORKFLOWS values from workflow-ids.json if present.
+
+    workflow-ids.json is produced by scripts/bootstrap/08_register_workflows.py
+    when a customer registers workflows in their account. The dict maps
+    upstream module name (e.g. 'EvidenceQC') -> {workflow_id, name, ...}.
+    We translate these to the snake_case keys used in WORKFLOWS and patch
+    the dict in place.
+    """
+    path = ROOT / "workflow-ids.json"
+    if not path.exists():
+        return
+    try:
+        registered = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return
+    upstream_to_snake = {
+        "GatherSampleEvidence": "gather_sample_evidence",
+        "GatherBatchEvidence":  "gather_batch_evidence",
+        "ClusterBatch":         "cluster_batch",
+        "GenerateBatchMetrics": "generate_batch_metrics",
+        "FilterBatch":          "filter_batch",
+        "MergeBatchSites":      "merge_batch_sites",
+        "GenotypeBatch":        "genotype_batch",
+        "RegenotypeCNVs":       "regenotype_cnvs",
+        "MakeCohortVcf":        "make_cohort_vcf",
+        "AnnotateVcf":          "annotate_vcf",
+        "EvidenceQC":           "evidence_qc",
+        "RefineComplexVariants":"refine_complex_variants",
+        "JoinRawCalls":         "join_raw_calls",
+        "SVConcordance":        "sv_concordance",
+        "ScoreGenotypes":       "score_genotypes",
+        "FilterGenotypes":      "filter_genotypes",
+        "MainVcfQC":            "main_vcf_qc",
+        "VisualizeCnvs":        "visualize_cnvs",
+    }
+    n_loaded = 0
+    for upstream_name, info in registered.items():
+        snake = upstream_to_snake.get(upstream_name)
+        if snake and isinstance(info, dict) and info.get("workflow_id"):
+            WORKFLOWS[snake] = info["workflow_id"]
+            n_loaded += 1
+    if n_loaded:
+        print(f"  Loaded {n_loaded} workflow IDs from {path.name}")
+
+
+_load_workflow_ids_from_bootstrap()
+
 # Reference template runs -- we copy these runs' parameter dicts and then
 # swap the s3 URIs to point at the new cohort's outputs.  These IDs are
 # the historical successful runs from the 2026q2 validation cohort.
@@ -622,10 +671,22 @@ def phase_b_cohort_modules(args: argparse.Namespace, output_base: str) -> list[S
         "merge_batch_sites",
         "genotype_batch",
     ]
+    # Activate RegenotypeCNVs only on cohorts >= 100 samples (Req 19.6).
+    # On smaller cohorts the module finds no eligible variants
+    # (regeno_max_allele_freq=0.01) and the WDL doesn't handle empty output.
+    if sample_count >= 100:
+        sequence.append("regenotype_cnvs")
+    else:
+        print(f"  [SKIP] RegenotypeCNVs — sample_count={sample_count} < 100 "
+              "(Req 19.6: skip on small cohorts)")
 
     records: list[StageRecord] = []
     for module_key in sequence:
         print(f"\n--- {module_key} ---")
+        skipped = _maybe_skip_phase(module_key, module_key)
+        if skipped is not None:
+            records.append(skipped)
+            continue
         rec = _start_cohort_module(
             omics,
             module_key=module_key,

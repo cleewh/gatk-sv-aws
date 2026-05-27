@@ -1,0 +1,62 @@
+{
+  "fmax_beta": {
+    "description": "Input fmax_beta for workflow ScoreGenotypes",
+    "optional": true,
+    "type": "Float"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow ScoreGenotypes",
+    "optional": false,
+    "type": "String"
+  },
+  "genome_tracks": {
+    "description": "Input genome_tracks for workflow ScoreGenotypes",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "gq_recalibrator_model_file": {
+    "description": "Input gq_recalibrator_model_file for workflow ScoreGenotypes",
+    "optional": false,
+    "type": "File"
+  },
+  "linux_docker": {
+    "description": "Input linux_docker for workflow ScoreGenotypes",
+    "optional": false,
+    "type": "String"
+  },
+  "optimize_vcf_records_per_shard": {
+    "description": "Input optimize_vcf_records_per_shard for workflow ScoreGenotypes",
+    "optional": true,
+    "type": "Int"
+  },
+  "output_prefix": {
+    "description": "Input output_prefix for workflow ScoreGenotypes",
+    "optional": true,
+    "type": "String"
+  },
+  "recalibrate_gq_args": {
+    "description": "Input recalibrate_gq_args for workflow ScoreGenotypes",
+    "optional": true,
+    "type": "Array[String]"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow ScoreGenotypes",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow ScoreGenotypes",
+    "optional": false,
+    "type": "String"
+  },
+  "truth_json": {
+    "description": "Input truth_json for workflow ScoreGenotypes",
+    "optional": true,
+    "type": "File"
+  },
+  "vcf": {
+    "description": "Input vcf for workflow ScoreGenotypes",
+    "optional": false,
+    "type": "File"
+  }
+}

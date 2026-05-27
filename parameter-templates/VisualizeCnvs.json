@@ -1,0 +1,47 @@
+{
+  "flags": {
+    "description": "Input flags for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "String"
+  },
+  "median_files": {
+    "description": "Input median_files for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "min_size": {
+    "description": "Input min_size for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "Int"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "File"
+  },
+  "prefix": {
+    "description": "Input prefix for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "String"
+  },
+  "rd_files": {
+    "description": "Input rd_files for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "runtime_attr_rdtest": {
+    "description": "Input runtime_attr_rdtest for workflow VisualizeCnvs",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "String"
+  },
+  "vcf_or_bed": {
+    "description": "Input vcf_or_bed for workflow VisualizeCnvs",
+    "optional": false,
+    "type": "File"
+  }
+}

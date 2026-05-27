@@ -1,0 +1,222 @@
+{
+  "bcftools_preprocessing_options": {
+    "description": "Input bcftools_preprocessing_options for workflow MainVcfQC",
+    "optional": true,
+    "type": "String"
+  },
+  "do_per_sample_qc": {
+    "description": "Input do_per_sample_qc for workflow MainVcfQC",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "downsample_qc_per_sample": {
+    "description": "Input downsample_qc_per_sample for workflow MainVcfQC",
+    "optional": true,
+    "type": "Int"
+  },
+  "list_of_samples_to_include": {
+    "description": "Input list_of_samples_to_include for workflow MainVcfQC",
+    "optional": true,
+    "type": "File"
+  },
+  "max_gq": {
+    "description": "Input max_gq for workflow MainVcfQC",
+    "optional": true,
+    "type": "Int"
+  },
+  "max_trios": {
+    "description": "Input max_trios for workflow MainVcfQC",
+    "optional": true,
+    "type": "Int"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow MainVcfQC",
+    "optional": true,
+    "type": "File"
+  },
+  "prefix": {
+    "description": "Input prefix for workflow MainVcfQC",
+    "optional": false,
+    "type": "String"
+  },
+  "primary_contigs_fai": {
+    "description": "Input primary_contigs_fai for workflow MainVcfQC",
+    "optional": false,
+    "type": "File"
+  },
+  "random_seed": {
+    "description": "Input random_seed for workflow MainVcfQC",
+    "optional": true,
+    "type": "Int"
+  },
+  "runtime_override_benchmark_samples": {
+    "description": "Input runtime_override_benchmark_samples for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_collect_sharded_vcf_stats": {
+    "description": "Input runtime_override_collect_sharded_vcf_stats for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_collect_vids_per_sample": {
+    "description": "Input runtime_override_collect_vids_per_sample for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_identify_duplicates": {
+    "description": "Input runtime_override_identify_duplicates for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_and_tar_shard_benchmarks": {
+    "description": "Input runtime_override_merge_and_tar_shard_benchmarks for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_duplicates": {
+    "description": "Input runtime_override_merge_duplicates for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_sharded_per_sample_vid_lists": {
+    "description": "Input runtime_override_merge_sharded_per_sample_vid_lists for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_site_level_benchmark": {
+    "description": "Input runtime_override_merge_site_level_benchmark for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_subvcf_stat_shards": {
+    "description": "Input runtime_override_merge_subvcf_stat_shards for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_vcf_2_bed": {
+    "description": "Input runtime_override_merge_vcf_2_bed for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_merge_vcfwide_stat_shards": {
+    "description": "Input runtime_override_merge_vcfwide_stat_shards for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_per_sample_benchmark_plot": {
+    "description": "Input runtime_override_per_sample_benchmark_plot for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_plot_qc_per_family": {
+    "description": "Input runtime_override_plot_qc_per_family for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_plot_qc_per_sample": {
+    "description": "Input runtime_override_plot_qc_per_sample for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_plot_qc_vcf_wide": {
+    "description": "Input runtime_override_plot_qc_vcf_wide for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_preprocess_vcf": {
+    "description": "Input runtime_override_preprocess_vcf for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_rename_vcf_samples": {
+    "description": "Input runtime_override_rename_vcf_samples for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_sanitize_outputs": {
+    "description": "Input runtime_override_sanitize_outputs for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_scatter_vcf": {
+    "description": "Input runtime_override_scatter_vcf for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_site_level_benchmark": {
+    "description": "Input runtime_override_site_level_benchmark for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_site_level_benchmark_plot": {
+    "description": "Input runtime_override_site_level_benchmark_plot for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_split_samples_list": {
+    "description": "Input runtime_override_split_samples_list for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_split_shuffled_list": {
+    "description": "Input runtime_override_split_shuffled_list for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_subset_vcf": {
+    "description": "Input runtime_override_subset_vcf for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_svtk_vcf_2_bed": {
+    "description": "Input runtime_override_svtk_vcf_2_bed for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_tar_shard_vid_lists": {
+    "description": "Input runtime_override_tar_shard_vid_lists for workflow MainVcfQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "sample_renaming_tsv": {
+    "description": "Input sample_renaming_tsv for workflow MainVcfQC",
+    "optional": true,
+    "type": "File"
+  },
+  "samples_per_shard": {
+    "description": "Input samples_per_shard for workflow MainVcfQC",
+    "optional": false,
+    "type": "Int"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow MainVcfQC",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_per_shard": {
+    "description": "Input sv_per_shard for workflow MainVcfQC",
+    "optional": false,
+    "type": "Int"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow MainVcfQC",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_qc_docker": {
+    "description": "Input sv_pipeline_qc_docker for workflow MainVcfQC",
+    "optional": false,
+    "type": "String"
+  },
+  "vcf_format_has_cn": {
+    "description": "Input vcf_format_has_cn for workflow MainVcfQC",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "vcfs": {
+    "description": "Input vcfs for workflow MainVcfQC",
+    "optional": false,
+    "type": "Array[File]"
+  }
+}

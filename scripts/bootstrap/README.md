@@ -42,7 +42,8 @@ python scripts/bootstrap/06_create_run_cache.py
 python scripts/bootstrap/07_provision_ec2_hybrid.py
 # Save the instance id it prints to GATK_SV_EC2_INSTANCE_ID
 
-# 9. Register the 10 HealthOmics module workflows
+# 9. Register the 18 HealthOmics module workflows
+# (10 original + 8 from the v1.0 amendment, Req 19)
 python scripts/bootstrap/08_register_workflows.py
 # This writes workflow-ids.json with the registered workflow ids
 
@@ -73,7 +74,7 @@ python scripts/run_cohort_e2e.py \
 | 05 | Creates `gatk-sv-healthomics-run-role` with synthesized least-privilege policy | Idempotent (PutRolePolicy) |
 | 06 | Creates a HealthOmics run cache with `CACHE_ALWAYS` | Skips if already exists |
 | 07 | Launches m5.2xlarge with Docker pre-installed, then stops it | Skips if instance already tagged `gatk-sv:role=ec2-hybrid` |
-| 08 | Packages 10 WDL bundles and registers each as a HealthOmics workflow | Skips already-registered workflows |
+| 08 | Packages 18 WDL bundles and registers each as a HealthOmics workflow (10 original + 8 from the v1.0 amendment, Req 19) | Skips already-registered workflows |
 | 09 | Reads each resource and confirms it's healthy + accessible | Read-only |
 
 ## Estimated cost of bootstrap

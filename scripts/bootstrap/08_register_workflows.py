@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""Register the 10 GATK-SV HealthOmics workflows in the customer's account.
+"""Register the 18 GATK-SV HealthOmics workflows in the customer's account.
 
-For each module in MIGRATED_MODULES we:
+Covers the 10 original modules plus the 8 added in the v1.0 amendment
+(Req 19, 2026-05-26): EvidenceQC, RefineComplexVariants, JoinRawCalls,
+SVConcordance, ScoreGenotypes, FilterGenotypes, MainVcfQC, VisualizeCnvs.
+
+For each module in PRODUCTION_BUNDLES we:
   1. Read the WDL bundle ZIP shipped under wdl/bundles/<Module>/
   2. Read the parameter template under parameter-templates/<Module>.json
   3. Read the container-registry-map (filled by 00_substitute_placeholders.py)
@@ -37,6 +41,24 @@ PRODUCTION_BUNDLES = {
     "RegenotypeCNVs":                 "RegenotypeCNVs/RegenotypeCNVs-bundle.zip",
     "MakeCohortVcf":                  "MakeCohortVcf/MakeCohortVcf-bundle.zip",
     "AnnotateVcf":                    "AnnotateVcf/AnnotateVcf-bundle.zip",
+    # Phase 8 (Req 19) modules. Bundle ZIPs produced by
+    # scripts/migrate_v1_modules.py against gatk-sv@v1.1 (a1be457).
+    "EvidenceQC":                     "EvidenceQC/EvidenceQC-bundle.zip",
+    "RefineComplexVariants":          "RefineComplexVariants/RefineComplexVariants-bundle.zip",
+    "JoinRawCalls":                   "JoinRawCalls/JoinRawCalls-bundle.zip",
+    "SVConcordance":                  "SVConcordance/SVConcordance-bundle.zip",
+    "ScoreGenotypes":                 "ScoreGenotypes/ScoreGenotypes-bundle.zip",
+    "FilterGenotypes":                "FilterGenotypes/FilterGenotypes-bundle.zip",
+    "MainVcfQC":                      "MainVcfQC/MainVcfQC-bundle.zip",
+    "VisualizeCnvs":                  "VisualizeCnvs/VisualizeCnvs-bundle.zip",
+}
+
+# Mapping of module name -> main WDL file inside the bundle.
+# Most module bundles use wdl/<Module>.wdl, but two have different casing
+# (MainVcfQC bundle's main file is MainVcfQc.wdl) — record the exceptions
+# explicitly so the registrar passes the right path.
+MAIN_WDL_OVERRIDES = {
+    "MainVcfQC": "wdl/MainVcfQc.wdl",
 }
 
 NAME_PREFIX = "gatk-sv-"
@@ -114,7 +136,7 @@ def main() -> int:
             name=name,
             engine="WDL",
             definitionZip=bundle_path.read_bytes(),
-            main=f"wdl/{module}.wdl",
+            main=MAIN_WDL_OVERRIDES.get(module, f"wdl/{module}.wdl"),
             parameterTemplate=param_template,
             description=f"GATK-SV {module} (production-validated bundle: {bundle_rel})",
             tags={

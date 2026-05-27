@@ -1,0 +1,152 @@
+{
+  "NONE_ARRAY_": {
+    "description": "Input NONE_ARRAY_ for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "chr_x": {
+    "description": "Input chr_x for workflow JoinRawCalls",
+    "optional": true,
+    "type": "String"
+  },
+  "chr_y": {
+    "description": "Input chr_y for workflow JoinRawCalls",
+    "optional": true,
+    "type": "String"
+  },
+  "clustered_depth_vcf_indexes": {
+    "description": "Input clustered_depth_vcf_indexes for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_depth_vcfs": {
+    "description": "Input clustered_depth_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_dragen_vcf_indexes": {
+    "description": "Input clustered_dragen_vcf_indexes for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_dragen_vcfs": {
+    "description": "Input clustered_dragen_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_manta_vcf_indexes": {
+    "description": "Input clustered_manta_vcf_indexes for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_manta_vcfs": {
+    "description": "Input clustered_manta_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_melt_vcf_indexes": {
+    "description": "Input clustered_melt_vcf_indexes for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_melt_vcfs": {
+    "description": "Input clustered_melt_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_scramble_vcf_indexes": {
+    "description": "Input clustered_scramble_vcf_indexes for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_scramble_vcfs": {
+    "description": "Input clustered_scramble_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_wham_vcf_indexes": {
+    "description": "Input clustered_wham_vcf_indexes for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "clustered_wham_vcfs": {
+    "description": "Input clustered_wham_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "contig_list": {
+    "description": "Input contig_list for workflow JoinRawCalls",
+    "optional": false,
+    "type": "File"
+  },
+  "gatk_docker": {
+    "description": "Input gatk_docker for workflow JoinRawCalls",
+    "optional": false,
+    "type": "String"
+  },
+  "java_mem_fraction": {
+    "description": "Input java_mem_fraction for workflow JoinRawCalls",
+    "optional": true,
+    "type": "Float"
+  },
+  "ped_file": {
+    "description": "Input ped_file for workflow JoinRawCalls",
+    "optional": false,
+    "type": "File"
+  },
+  "prefix": {
+    "description": "Input prefix for workflow JoinRawCalls",
+    "optional": false,
+    "type": "String"
+  },
+  "reference_dict": {
+    "description": "Input reference_dict for workflow JoinRawCalls",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta": {
+    "description": "Input reference_fasta for workflow JoinRawCalls",
+    "optional": false,
+    "type": "File"
+  },
+  "reference_fasta_fai": {
+    "description": "Input reference_fasta_fai for workflow JoinRawCalls",
+    "optional": false,
+    "type": "File"
+  },
+  "runtime_attr_create_ploidy": {
+    "description": "Input runtime_attr_create_ploidy for workflow JoinRawCalls",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_prepare_truth": {
+    "description": "Input runtime_attr_prepare_truth for workflow JoinRawCalls",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_svcluster": {
+    "description": "Input runtime_attr_svcluster for workflow JoinRawCalls",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_concat_input_vcfs": {
+    "description": "Input runtime_override_concat_input_vcfs for workflow JoinRawCalls",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_override_concat_vcfs_pesr": {
+    "description": "Input runtime_override_concat_vcfs_pesr for workflow JoinRawCalls",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow JoinRawCalls",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow JoinRawCalls",
+    "optional": false,
+    "type": "String"
+  }
+}

@@ -19,28 +19,69 @@ build. Any other alignment reference is out of scope.
   target and not covered by the validation cohort. Operators using GRCh37 must provide
   their own matching reference bundle and expected outputs.
 
-## Migrated modules (ten, end-to-end)
+## Migrated modules (nineteen, end-to-end)
 
 Listed in workflow submission order. Each module is registered as its own HealthOmics
 workflow; the orchestrator chains them via the previous module's outputs.
 
-1. `GatherSampleEvidence` — per-sample SV evidence extraction (Manta, Wham, Scramble,
-   GATK-gCNV case-mode, PE/SR/RD/BAF)
-2. `GatherBatchEvidence` — batch-level evidence assembly, gCNV cohort-mode
-3. `ClusterBatch` — SV clustering within each batch
-4. `GenerateBatchMetrics` — per-batch quality metrics
-5. `FilterBatch` — allele frequency filtering
-6. `MergeBatchSites` — merge sites across batches
-7. `GenotypeBatch` — per-site per-sample likelihoods
-8. `RegenotypeCNVs` — CNV re-genotyping after filtering
-9. `MakeCohortVcf` — cohort-level VCF assembly
-10. `AnnotateVcf` — VEP, gnomAD-SV, GENCODE annotation
+The migrated set was extended from 10 to 19 modules in the v1.0
+completeness amendment (Req 19, 2026-05-26). The amendment added
+EvidenceQC, the GQ_Recalibrator chain (JoinRawCalls → SVConcordance →
+ScoreGenotypes → FilterGenotypes), RefineComplexVariants, MainVcfQC, and
+VisualizeCnvs — and activated RegenotypeCNVs for cohorts ≥ 100 samples.
 
-The list is also available at runtime via:
+### Phase A — per-sample evidence (per cohort sample)
+
+1. `GatherSampleEvidence` — per-sample SV evidence extraction (Manta, Wham,
+   Scramble, GATK-gCNV case-mode, PE/SR/RD/BAF).
+   - Production splits this into per-tool runs: `cc`, `cse`, `manta`, `wham`
+     on HealthOmics; `scramble` on EC2 hybrid (Phase A.5).
+2. `EvidenceQC` *(Phase A.6)* — per-sample QC after Phase A; produces metrics
+   that gate entry to the more expensive Phase B modules.
+
+### Phase B — cohort modules (per cohort)
+
+3. `TrainGCNV` — train the gCNV cohort-mode model.
+4. `GatherBatchEvidence` — batch-level evidence assembly, gCNV cohort-mode
+   genotyping.
+5. `ClusterBatch` — SV clustering within each batch.
+6. `GenerateBatchMetrics` — per-batch quality metrics.
+7. `FilterBatch` — allele frequency filtering.
+8. `MergeBatchSites` — merge sites across batches.
+9. `GenotypeBatch` — per-site per-sample likelihoods.
+10. `RegenotypeCNVs` *(activated for cohorts ≥ 100 samples)* — CNV re-genotyping.
+
+### Phase C — post-processing (per cohort)
+
+11. `MakeCohortVcf` *(EC2 hybrid)* — cohort-level VCF assembly. Runs
+    CombineBatches + ResolveComplexVariants + GenotypeComplexVariants +
+    CleanVcf as direct `docker run` on EC2 because the HealthOmics 47-second
+    multi-task kill makes the upstream sub-workflow chain unrunnable as
+    a HealthOmics workflow.
+12. `RefineComplexVariants` *(Phase C.1)* — refines complex SV calls.
+13. `JoinRawCalls` *(Phase C.2)* — start of GQ_Recalibrator chain.
+14. `SVConcordance` *(Phase C.3)* — annotates concordance with raw calls.
+15. `ScoreGenotypes` *(Phase C.4)* — GQ recalibrator scoring.
+16. `FilterGenotypes` *(Phase C.5)* — drops low-confidence calls.
+
+### Phase D — delivery (per cohort)
+
+17. `AnnotateVcf` — VEP-style functional consequences + gnomAD-SV allele
+    frequencies + GENCODE.
+18. `MainVcfQC` *(Phase D.2)* — cohort-level QC plots (always runs; non-fatal
+    if it errors).
+19. `VisualizeCnvs` *(Phase D.3, optional)* — per-CNV PNG plots; gated by
+    `--include-visualize-cnvs`.
+
+The complete list is also available at runtime via:
 
 ```python
 from kiro_life_sciences.gatk_sv_healthomics.models import MIGRATED_MODULES
 ```
+
+The four `Module_Phase` boundaries (A, B, C, D) are documented in the
+glossary of the requirements document and enforced by the orchestrator's
+`--skip-*` CLI flags.
 
 ## SV callers in scope
 

@@ -177,6 +177,54 @@ on Cromwell-on-Terra producing the same output. See
 | TrainGCNV → AnnotateVcf | 🟢 SAFE | None |
 | MakeCohortVcf hybrid | 🟢 SAFE | None |
 
+## v1.0 module-completeness amendment (Req 19, 2026-05-26)
+
+The original migration covered 10 modules (`GatherSampleEvidence` →
+`AnnotateVcf`). Customer feedback flagged that upstream GATK-SV v1.0
+includes 22 modules total; we were missing 8 critical ones, including the
+entire **GQ_Recalibrator** chain that produces quality-recalibrated
+genotypes. The amendment ports these 8 from upstream `gatk-sv@v1.1`
+(commit `a1be457`) into our HealthOmics-ready bundle format.
+
+### Phase 8 modules — packaging (this audit)
+
+| Module | Phase | Source | Bundle | Lint | Notes |
+|---|---|---|---|---|---|
+| EvidenceQC            | A.6 | `wdl/EvidenceQC.wdl`        | `wdl/bundles/EvidenceQC/` | ✅ clean | Per-sample QC, gates Phase B |
+| RefineComplexVariants | C.1 | `wdl/RefineComplexVariants.wdl` | `wdl/bundles/RefineComplexVariants/` | ✅ clean | Post-CleanVcf complex SV refinement |
+| JoinRawCalls          | C.2 | `wdl/JoinRawCalls.wdl`     | `wdl/bundles/JoinRawCalls/` | ✅ clean | GQ_Recalibrator step 1/4 |
+| SVConcordance         | C.3 | `wdl/SVConcordance.wdl`    | `wdl/bundles/SVConcordance/` | ✅ clean | GQ_Recalibrator step 2/4 |
+| ScoreGenotypes        | C.4 | `wdl/ScoreGenotypes.wdl`   | `wdl/bundles/ScoreGenotypes/` | ✅ clean | GQ_Recalibrator step 3/4 |
+| FilterGenotypes       | C.5 | `wdl/FilterGenotypes.wdl`  | `wdl/bundles/FilterGenotypes/` | ✅ clean | GQ_Recalibrator step 4/4 |
+| MainVcfQC             | D.2 | `wdl/MainVcfQc.wdl`        | `wdl/bundles/MainVcfQC/` | ✅ clean | Cohort-level QC plots |
+| VisualizeCnvs         | D.3 | `wdl/VisualizeCnvs.wdl`    | `wdl/bundles/VisualizeCnvs/` | ✅ clean | Optional per-CNV PNGs |
+
+Plus **RegenotypeCNVs** is now activated for cohorts ≥ 100 samples
+(previously registered but always skipped).
+
+### Divergences observed
+
+The Phase 8 packager applied the standard divergence patches:
+1. `MELT` references in `EvidenceQC.wdl` (RawVcfQC scatter shard) — stripped per Req 23.3.
+2. `MELT` references in `JoinRawCalls.wdl` and `MainVcfQc.wdl` — stripped.
+3. `MELT` references in `FilterGenotypes.wdl` (it transitively imports `MainVcfQc.wdl`) — 2 sites.
+
+No `gs://` URI usages found in any of the 8 Phase 8 bundles.
+
+### Status of registration
+
+The bundles are committed and lint clean, but **not yet registered with
+HealthOmics in any account**. The customer (or any operator running
+`scripts/bootstrap/08_register_workflows.py`) will register them on first
+deployment; the result populates `workflow-ids.json`, which
+`scripts/run_cohort_e2e.py` reads at startup to wire the `WORKFLOWS` dict.
+
+The orchestrator's new phase functions (`phase_a6_evidence_qc`,
+`phase_c_post_processing`, `phase_d2_main_vcf_qc`, `phase_d3_visualize_cnvs`)
+are **skip-safe**: when the workflow ID is `None` they log
+`[SKIP] ... not yet registered` and continue, so the existing 10-module
+pipeline still runs end-to-end during the registration interim.
+
 ## Why this slipped through (process gaps)
 
 1. **No cross-engine validation gate** — when we created the `whamg-fast` and

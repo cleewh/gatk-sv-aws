@@ -1,0 +1,157 @@
+{
+  "NONE_FILE_": {
+    "description": "Input NONE_FILE_ for workflow EvidenceQC",
+    "optional": true,
+    "type": "File"
+  },
+  "batch": {
+    "description": "Input batch for workflow EvidenceQC",
+    "optional": false,
+    "type": "String"
+  },
+  "counts": {
+    "description": "Input counts for workflow EvidenceQC",
+    "optional": false,
+    "type": "Array[File]"
+  },
+  "disk_overhead_bincov_gb": {
+    "description": "Input disk_overhead_bincov_gb for workflow EvidenceQC",
+    "optional": true,
+    "type": "Int"
+  },
+  "dragen_vcfs": {
+    "description": "Input dragen_vcfs for workflow EvidenceQC",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "genome_file": {
+    "description": "Input genome_file for workflow EvidenceQC",
+    "optional": false,
+    "type": "File"
+  },
+  "manta_vcfs": {
+    "description": "Input manta_vcfs for workflow EvidenceQC",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "median_cov_mem_gb_per_sample": {
+    "description": "Input median_cov_mem_gb_per_sample for workflow EvidenceQC",
+    "optional": true,
+    "type": "Float"
+  },
+  "melt_insert_size": {
+    "description": "Input melt_insert_size for workflow EvidenceQC",
+    "optional": true,
+    "type": "Array[Float]"
+  },
+  "melt_vcfs": {
+    "description": "Input melt_vcfs for workflow EvidenceQC",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "ploidy_build_runtime_attr": {
+    "description": "Input ploidy_build_runtime_attr for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "ploidy_score_runtime_attr": {
+    "description": "Input ploidy_score_runtime_attr for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "run_ploidy": {
+    "description": "Input run_ploidy for workflow EvidenceQC",
+    "optional": true,
+    "type": "Boolean"
+  },
+  "run_vcf_qc": {
+    "description": "Input run_vcf_qc for workflow EvidenceQC",
+    "optional": false,
+    "type": "Boolean"
+  },
+  "runtime_attr_bincov_attr": {
+    "description": "Input runtime_attr_bincov_attr for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_make_qc_table": {
+    "description": "Input runtime_attr_make_qc_table for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_mediancov": {
+    "description": "Input runtime_attr_mediancov for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_qc": {
+    "description": "Input runtime_attr_qc for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_qc_counts": {
+    "description": "Input runtime_attr_qc_counts for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_qc_outlier": {
+    "description": "Input runtime_attr_qc_outlier for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "runtime_attr_variant_count_plots": {
+    "description": "Input runtime_attr_variant_count_plots for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "samples": {
+    "description": "Input samples for workflow EvidenceQC",
+    "optional": false,
+    "type": "Array[String]"
+  },
+  "scramble_vcfs": {
+    "description": "Input scramble_vcfs for workflow EvidenceQC",
+    "optional": true,
+    "type": "Array[File]"
+  },
+  "sv_base_docker": {
+    "description": "Input sv_base_docker for workflow EvidenceQC",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_base_mini_docker": {
+    "description": "Input sv_base_mini_docker for workflow EvidenceQC",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_docker": {
+    "description": "Input sv_pipeline_docker for workflow EvidenceQC",
+    "optional": false,
+    "type": "String"
+  },
+  "sv_pipeline_qc_docker": {
+    "description": "Input sv_pipeline_qc_docker for workflow EvidenceQC",
+    "optional": false,
+    "type": "String"
+  },
+  "wgd_build_runtime_attr": {
+    "description": "Input wgd_build_runtime_attr for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "wgd_score_runtime_attr": {
+    "description": "Input wgd_score_runtime_attr for workflow EvidenceQC",
+    "optional": true,
+    "type": "RuntimeAttr"
+  },
+  "wgd_scoring_mask": {
+    "description": "Input wgd_scoring_mask for workflow EvidenceQC",
+    "optional": false,
+    "type": "File"
+  },
+  "wham_vcfs": {
+    "description": "Input wham_vcfs for workflow EvidenceQC",
+    "optional": true,
+    "type": "Array[File]"
+  }
+}
