@@ -54,6 +54,7 @@ workflow-ids.json
 # not committed to keep repo customer-agnostic.
 sample-logs/
 scramble-ec2-runs.json
+stage-gatk-sv-156-runs.json
 validation-fix-runs.json
 cost-report-*.json
 gse-cohort-runs-customer-sim.json

@@ -1,0 +1,788 @@
+{
+  "cohort_id": "gatk-sv-156",
+  "source": "s3://gatk-sv-data-us-east-1/cram/ (Registry of Open Data on AWS)",
+  "destination_base": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156",
+  "sample_count": 156,
+  "samples": [
+    {
+      "sample_id": "HG00096",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00096.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00096.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00129",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00129.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00129.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00140",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00140.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00140.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00150",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00150.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00150.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00187",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00187.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00187.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00239",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00239.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00239.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00277",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00277.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00277.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00288",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00288.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00288.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00337",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00337.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00337.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00349",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00349.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00349.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00375",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00375.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00375.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00410",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00410.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00410.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00457",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00457.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00457.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00557",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00557.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00557.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00599",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00599.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00599.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00625",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00625.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00625.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00701",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00701.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00701.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00740",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00740.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00740.final.cram.crai"
+    },
+    {
+      "sample_id": "HG00844",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00844.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG00844.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01060",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01060.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01060.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01085",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01085.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01085.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01112",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01112.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01112.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01275",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01275.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01275.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01325",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01325.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01325.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01344",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01344.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01344.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01356",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01356.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01356.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01384",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01384.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01384.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01393",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01393.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01393.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01396",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01396.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01396.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01474",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01474.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01474.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01507",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01507.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01507.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01572",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01572.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01572.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01607",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01607.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01607.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01709",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01709.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01709.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01747",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01747.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01747.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01790",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01790.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01790.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01794",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01794.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01794.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01799",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01799.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01799.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01861",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01861.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01861.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01874",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01874.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01874.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01880",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01880.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01880.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01885",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01885.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01885.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01958",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01958.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01958.final.cram.crai"
+    },
+    {
+      "sample_id": "HG01982",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01982.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG01982.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02002",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02002.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02002.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02010",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02010.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02010.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02019",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02019.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02019.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02020",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02020.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02020.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02069",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02069.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02069.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02085",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02085.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02085.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02186",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02186.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02186.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02221",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02221.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02221.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02235",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02235.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02235.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02272",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02272.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02272.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02275",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02275.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02275.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02299",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02299.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02299.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02332",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02332.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02332.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02367",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02367.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02367.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02374",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02374.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02374.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02489",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02489.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02489.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02490",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02490.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02490.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02491",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02491.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02491.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02586",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02586.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02586.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02588",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02588.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02588.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02611",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02611.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02611.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02620",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02620.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02620.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02642",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02642.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02642.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02648",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02648.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02648.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02658",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02658.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02658.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02855",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02855.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02855.final.cram.crai"
+    },
+    {
+      "sample_id": "HG02953",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02953.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG02953.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03007",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03007.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03007.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03009",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03009.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03009.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03085",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03085.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03085.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03099",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03099.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03099.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03100",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03100.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03100.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03111",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03111.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03111.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03369",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03369.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03369.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03370",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03370.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03370.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03436",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03436.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03436.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03449",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03449.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03449.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03472",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03472.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03472.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03476",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03476.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03476.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03556",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03556.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03556.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03604",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03604.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03604.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03649",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03649.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03649.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03684",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03684.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03684.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03694",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03694.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03694.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03709",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03709.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03709.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03722",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03722.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03722.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03727",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03727.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03727.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03744",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03744.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03744.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03756",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03756.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03756.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03789",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03789.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03789.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03850",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03850.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03850.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03864",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03864.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03864.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03872",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03872.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03872.final.cram.crai"
+    },
+    {
+      "sample_id": "HG03888",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03888.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG03888.final.cram.crai"
+    },
+    {
+      "sample_id": "HG04118",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04118.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04118.final.cram.crai"
+    },
+    {
+      "sample_id": "HG04158",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04158.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04158.final.cram.crai"
+    },
+    {
+      "sample_id": "HG04161",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04161.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04161.final.cram.crai"
+    },
+    {
+      "sample_id": "HG04183",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04183.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/HG04183.final.cram.crai"
+    },
+    {
+      "sample_id": "NA06984",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA06984.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA06984.final.cram.crai"
+    },
+    {
+      "sample_id": "NA10847",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA10847.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA10847.final.cram.crai"
+    },
+    {
+      "sample_id": "NA11894",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA11894.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA11894.final.cram.crai"
+    },
+    {
+      "sample_id": "NA12340",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA12340.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA12340.final.cram.crai"
+    },
+    {
+      "sample_id": "NA12489",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA12489.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA12489.final.cram.crai"
+    },
+    {
+      "sample_id": "NA12872",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA12872.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA12872.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18499",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18499.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18499.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18507",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18507.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18507.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18530",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18530.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18530.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18539",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18539.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18539.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18549",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18549.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18549.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18553",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18553.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18553.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18560",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18560.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18560.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18638",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18638.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18638.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18923",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18923.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18923.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18941",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18941.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18941.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18945",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18945.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18945.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18956",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18956.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18956.final.cram.crai"
+    },
+    {
+      "sample_id": "NA18995",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18995.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA18995.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19001",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19001.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19001.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19035",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19035.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19035.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19062",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19062.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19062.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19102",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19102.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19102.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19143",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19143.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19143.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19184",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19184.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19184.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19350",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19350.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19350.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19351",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19351.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19351.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19377",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19377.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19377.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19443",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19443.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19443.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19449",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19449.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19449.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19661",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19661.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19661.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19678",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19678.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19678.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19679",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19679.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19679.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19684",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19684.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19684.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19746",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19746.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19746.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19795",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19795.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19795.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19818",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19818.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19818.final.cram.crai"
+    },
+    {
+      "sample_id": "NA19913",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19913.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA19913.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20126",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20126.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20126.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20320",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20320.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20320.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20321",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20321.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20321.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20346",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20346.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20346.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20509",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20509.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20509.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20510",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20510.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20510.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20522",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20522.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20522.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20752",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20752.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20752.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20764",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20764.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20764.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20802",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20802.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20802.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20845",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20845.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20845.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20869",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20869.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20869.final.cram.crai"
+    },
+    {
+      "sample_id": "NA20895",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20895.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA20895.final.cram.crai"
+    },
+    {
+      "sample_id": "NA21102",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA21102.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA21102.final.cram.crai"
+    },
+    {
+      "sample_id": "NA21122",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA21122.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA21122.final.cram.crai"
+    },
+    {
+      "sample_id": "NA21133",
+      "cram": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA21133.final.cram",
+      "crai": "s3://omics-cohorts-ap-southeast-1-687677765589/cohorts/gatk-sv-156/NA21133.final.cram.crai"
+    }
+  ]
+}
