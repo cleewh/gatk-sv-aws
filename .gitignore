@@ -65,3 +65,5 @@ gse-cohort-runs-customer-sim.json
 # are committed; the source trees are not (they're regenerable from upstream).
 wdl/bundles/*/v1-build-src/
 phase8-migration-report-*.json
+main-vcf-qc-smoke-runs.json
+main-vcf-qc-smoke-ec2-runs.json

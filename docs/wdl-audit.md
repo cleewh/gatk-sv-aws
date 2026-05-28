@@ -225,7 +225,9 @@ are **skip-safe**: when the workflow ID is `None` they log
 `[SKIP] ... not yet registered` and continue, so the existing 10-module
 pipeline still runs end-to-end during the registration interim.
 
-### Validation iterations 2026-05-27
+### Validation iterations 2026-05-27 / 2026-05-28
+
+#### EvidenceQC (Phase A.6) — VALIDATED ✅
 
 Following the registration of all 18 workflows, ran a 10-sample EvidenceQC
 smoke test (HG00096, HG00097, HG00099, HG00100, HG00101, HG00102, HG00513,
