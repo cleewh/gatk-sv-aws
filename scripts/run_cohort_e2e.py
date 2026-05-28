@@ -885,21 +885,85 @@ def phase_e_cost_report(
     print(f"PHASE E: cost report  ({args.cohort_id})")
     print("=" * 78)
 
+    # Compute precise per-stage cost using boto3 metering data (no Cost
+    # Explorer wait — see scripts/precise_cost.py for methodology).
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        from precise_cost import cost_for_run as _precise_cost_for_run
+    except ImportError:
+        _precise_cost_for_run = None
+
+    omics = boto3.client("omics", region_name=REGION)
+    annotated_stages: list[dict[str, Any]] = []
+    cohort_compute = 0.0
+    cohort_storage = 0.0
+    for r in records:
+        d = dict(r.__dict__)
+        if r.kind == "healthomics" and r.id and r.id != "(not yet registered)" and _precise_cost_for_run:
+            try:
+                pc = _precise_cost_for_run(omics, r.id)
+                if pc.get("status") == "COMPLETED":
+                    d["compute_cost_usd"] = pc.get("compute_cost_usd")
+                    d["storage_cost_usd"] = pc.get("storage_cost_usd")
+                    d["total_cost_usd"] = pc.get("total_cost_usd")
+                    d["wall_clock_min"] = pc.get("wall_clock_min")
+                    d["by_instance"] = pc.get("by_instance")
+                    cohort_compute += pc.get("compute_cost_usd", 0.0)
+                    cohort_storage += pc.get("storage_cost_usd", 0.0)
+            except Exception as e:  # pragma: no cover - defensive
+                d["cost_error"] = str(e)
+        annotated_stages.append(d)
+
+    # Print the per-stage time + cost table.
+    print()
+    print(f"{'stage':<35s} {'kind':<11s} {'status':<11s} {'duration':>10s} {'cost (USD)':>12s}")
+    print("-" * 80)
+    for s in annotated_stages:
+        dur_sec = s.get("duration_sec") or 0.0
+        dur_min = dur_sec / 60.0 if dur_sec else 0.0
+        cost = s.get("total_cost_usd", "")
+        cost_str = f"${cost:.2f}" if isinstance(cost, (int, float)) else "(n/a)"
+        print(f"{s['stage']:<35s} {s['kind']:<11s} {str(s['status']):<11s} "
+              f"{dur_min:>8.1f} m {cost_str:>12s}")
+    print("-" * 80)
+    cohort_total = cohort_compute + cohort_storage
+    n_samples = args.sample_count or 1
+    per_sample = cohort_total / n_samples if n_samples else 0.0
+    print(f"{'TOTAL HealthOmics':<35s} {'':<11s} {'':<11s} "
+          f"{'':>10s} {f'${cohort_total:.2f}':>12s}")
+    print(f"  per sample (n={n_samples}): ${per_sample:.2f}")
+    print(f"  compute: ${cohort_compute:.2f}, storage: ${cohort_storage:.2f}")
+    print(
+        "  (EC2 hybrid stages — scramble, MakeCohortVcf — are not in this "
+        "total; query Cost Explorer with the cohort tag for the full picture "
+        "after ~24h.)"
+    )
+
     report = {
         "cohort_id": args.cohort_id,
         "sample_count": args.sample_count,
         "region": REGION,
         "generated_at": _now_iso(),
-        "stages": [r.__dict__ for r in records],
+        "stages": annotated_stages,
+        "totals": {
+            "healthomics_compute_cost_usd": round(cohort_compute, 4),
+            "healthomics_storage_cost_usd": round(cohort_storage, 4),
+            "healthomics_total_cost_usd": round(cohort_total, 4),
+            "per_sample_cost_usd": round(per_sample, 4),
+        },
         "note": (
-            "Cost values are NOT included here -- query Cost Explorer with "
-            f"the tag gatk-sv:cohort-id={args.cohort_id} once spend has "
-            "settled (~24h after run completion)."
+            "HealthOmics costs computed from boto3 metering data via "
+            "scripts/precise_cost.py: per-task instanceType x duration x "
+            "ap-se-1 published on-demand rate, plus storage GiB x wall-clock. "
+            "Accuracy ~95-99% of Cost Explorer (intra-region data-transfer "
+            "is $0, not included). EC2 hybrid stages are not included; "
+            "query Cost Explorer with tag gatk-sv:cohort-id=" + args.cohort_id +
+            " after ~24h for the full picture."
         ),
     }
     out = ROOT / f"cost-report-{args.cohort_id}.json"
     out.write_text(json.dumps(report, indent=2, default=str))
-    print(f"  wrote {out}")
+    print(f"\n  wrote {out.name}")
     return out
 
 

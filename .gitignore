@@ -56,6 +56,7 @@ sample-logs/
 scramble-ec2-runs.json
 stage-gatk-sv-156-runs.json
 validation-fix-runs.json
+evidence-qc-smoke-runs.json
 cost-report-*.json
 gse-cohort-runs-customer-sim.json
 

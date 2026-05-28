@@ -2,7 +2,7 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "S3ReadReferencesAndInputs",
+      "Sid": "S3ReadReferencesInputsAndOutputs",
       "Effect": "Allow",
       "Action": [
         "s3:GetObject",
@@ -14,18 +14,23 @@
         "arn:aws:s3:::omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/*",
         "arn:aws:s3:::omics-cohorts-ap-southeast-1-__ACCOUNT_ID__",
         "arn:aws:s3:::omics-wdl-ap-southeast-1-__ACCOUNT_ID__/workflows/*",
-        "arn:aws:s3:::omics-wdl-ap-southeast-1-__ACCOUNT_ID__"
+        "arn:aws:s3:::omics-wdl-ap-southeast-1-__ACCOUNT_ID__/container-registry-map/*",
+        "arn:aws:s3:::omics-wdl-ap-southeast-1-__ACCOUNT_ID__",
+        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1/runs/*",
+        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1/run-cache/*",
+        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1"
       ]
     },
     {
-      "Sid": "S3WriteOutputs",
+      "Sid": "S3WriteOutputsAndCache",
       "Effect": "Allow",
       "Action": [
         "s3:PutObject",
         "s3:AbortMultipartUpload"
       ],
       "Resource": [
-        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1/runs/*"
+        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1/runs/*",
+        "arn:aws:s3:::healthomics-outputs-__ACCOUNT_ID__-apse1/run-cache/*"
       ]
     },
     {
@@ -37,6 +42,7 @@
         "ecr:BatchCheckLayerAvailability"
       ],
       "Resource": [
+        "arn:aws:ecr:ap-southeast-1:__ACCOUNT_ID__:repository/gatk-sv/*",
         "arn:aws:ecr:ap-southeast-1:__ACCOUNT_ID__:repository/quay/biocontainers/samtools",
         "arn:aws:ecr:ap-southeast-1:__ACCOUNT_ID__:repository/ecr-public/lts/ubuntu"
       ]

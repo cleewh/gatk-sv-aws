@@ -225,6 +225,75 @@ are **skip-safe**: when the workflow ID is `None` they log
 `[SKIP] ... not yet registered` and continue, so the existing 10-module
 pipeline still runs end-to-end during the registration interim.
 
+### Validation iterations 2026-05-27
+
+Following the registration of all 18 workflows, ran a 10-sample EvidenceQC
+smoke test (HG00096, HG00097, HG00099, HG00100, HG00101, HG00102, HG00513,
+NA12878, NA19238, NA19239) using existing 2026q2 cohort GSE outputs as
+inputs. The smoke test exposed multiple HealthOmics compatibility issues
+that required 3 successive WDL patches:
+
+**Iteration 1 — `6728198` FAILED**: The synthesized
+`gatk-sv-healthomics-run-role` IAM policy was missing read+write
+permission on the `run-cache/*` S3 prefix. HealthOmics couldn't write
+cache entries and aborted the run after 9 min. **Fixed** by extending
+`iam/policies/gatk-sv-run-role.json` to include `run-cache/*` in both
+the `S3ReadReferencesInputsAndOutputs` and `S3WriteOutputsAndCache`
+statements.
+
+**Iteration 2 — `4072843` FAILED**: With IAM fixed, the run reached
+`MergeVariantCounts` (line 141 of `RawVcfQC.wdl`) and was terminated by
+the **HealthOmics 47-second kill**. Same pattern documented earlier for
+Scramble and CombineBatches: a 2+ task workflow that scatters per-sample
+work and then aggregates triggers the kill. The aggregator tasks that
+consume Array[File] outputs from a scatter hit the limit.
+
+**Iteration 3 — `4992329` FAILED, applied patch v1**:
+`scripts/patch_evidence_qc.py` rewrote `RawVcfQC.wdl` to drop the two
+post-scatter aggregator tasks (`PickOutliers` + `MergeVariantCounts`).
+The per-sample `RunIndividualQC` scatter is preserved; per-sample stats
+are now exposed as workflow outputs. Run failed because the calling
+workflow `EvidenceQC.wdl` still expected the dropped outputs and
+substituted `"NONE"` string sentinels that miniwdl rejects at runtime.
+
+**Iteration 4 — `8585754` FAILED, applied patch v1 + run_vcf_qc=False**:
+Disabled the entire `RawVcfQC` cascade by setting `run_vcf_qc=False`.
+But `MakeQcTable` is gated only by `run_ploidy`, not `run_vcf_qc`, so
+it ran unconditionally and crashed on the `"NONE"` File inputs.
+
+**Iteration 5 — `8627281` FAILED, applied patches v1+v2**:
+`scripts/patch_evidence_qc_v2.py` rewrote the second `if (run_ploidy)`
+block in `EvidenceQC.wdl` to gate on `if (run_ploidy && run_vcf_qc)`,
+properly suppressing both `CreateVariantCountPlots` and `MakeQcTable`
+when `run_vcf_qc=False`. Run failed because the workflow `output { }`
+block still contained 16 `File? <caller>_qc_*/<caller>_variant_counts =
+"NONE"` declarations that miniwdl evaluates regardless of conditional
+gating.
+
+**Iteration 6 — `2785300` ✅ COMPLETED, applied patches v1+v2+v3**:
+`scripts/patch_evidence_qc_v3.py` stripped the 16 orphan output
+declarations and the `qc_table = MakeQcTable.qc_table` declaration
+from the workflow output block. Also rewrote
+`File? ploidy_plots = if run_ploidy then select_first([...]) else NONE_FILE_`
+to `File? ploidy_plots = Ploidy.ploidy_plots`.
+
+**Final EvidenceQC workflow id: `7602667`**. Outputs the bincov matrix,
+median coverage, ploidy matrix/plots, and WGD scores — the inputs Phase
+B requires. Variant-count plots and merged QC table are skipped (they're
+nice-to-haves; can be regenerated off-HealthOmics from the per-sample
+VCFs if needed).
+
+**Cost summary** for the 6-iteration debug cycle: total $0.12 across 5
+failed runs. Iteration 6 hit cache for all 17 tasks (cost $0.00).
+Cold-start cost for a fresh 10-sample EvidenceQC run is ~$0.04, or
+$0.005 per sample.
+
+**Open issue**: the 7 other Phase 8 workflows (`RefineComplexVariants`,
+`JoinRawCalls`, `SVConcordance`, `ScoreGenotypes`, `FilterGenotypes`,
+`MainVcfQC`, `VisualizeCnvs`) likely have similar HealthOmics
+compatibility issues. Each will need its own iterate-and-patch cycle
+before the full pipeline smoke can run end-to-end.
+
 ## Why this slipped through (process gaps)
 
 1. **No cross-engine validation gate** — when we created the `whamg-fast` and

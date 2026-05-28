@@ -5,6 +5,26 @@
       "change_kind": "remove_caller",
       "file": "EvidenceQC.wdl",
       "reason": "MELT excluded per Req 23.3"
+    },
+    {
+      "change_kind": "patch_workflow",
+      "file": "wdl/RawVcfQC.wdl",
+      "reason": "Patched 2026-05-27 to dodge HealthOmics 47-second kill. Dropped PickOutliers and MergeVariantCounts post-scatter aggregator tasks; per-sample stats now exposed as workflow output for off-HealthOmics aggregation via scripts/run_evidence_qc_aggregator_ec2.sh."
+    },
+    {
+      "change_kind": "patch_workflow",
+      "file": "wdl/EvidenceQC.wdl",
+      "reason": "Replaced four RawVcfQC_<caller>.{high,low,variant_counts} output references with sentinel \"NONE\" strings, since RawVcfQC.wdl no longer emits those outputs (see RawVcfQC.wdl divergence)."
+    },
+    {
+      "change_kind": "patch_workflow",
+      "file": "wdl/EvidenceQC.wdl",
+      "reason": "Gate the second `if (run_ploidy)` block (CreateVariantCountPlots + MakeQcTable) on `run_ploidy && run_vcf_qc`. Without this gate, MakeQcTable runs even when run_vcf_qc=False and crashes on the missing variant-count Files (which RawVcfQC no longer emits since the v1 patch). Production setting: run_vcf_qc=False."
+    },
+    {
+      "change_kind": "patch_workflow",
+      "file": "wdl/EvidenceQC.wdl",
+      "reason": "Strip 15 `File? <caller>_qc_*/<caller>_variant_counts = \"NONE\"` declarations and the `qc_table = MakeQcTable.qc_table` declaration from the workflow output block. miniwdl's [file_io] input check rejects the literal \"NONE\" string. With the v1+v2 patches gating the upstream calls on run_vcf_qc, these output declarations are orphans and should be removed entirely. Also rewrites ploidy_plots to use Ploidy.ploidy_plots directly (the original conditional referenced CreateVariantCountPlots which no longer runs)."
     }
   ],
   "files": [
