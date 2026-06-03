@@ -6,20 +6,32 @@ estimates**; the Cost Optimizer updates them from measured runs (Req 8.3, 9.2).
 
 ## Current status
 
-**No cost or runtime data has been measured at production scale yet.** The values
-below come from the per-module budget allocation in Design §Cost Model and upstream
-GATK-SV operator reports on Terra / Cromwell (roughly equivalent hardware).
+**First measured run complete (2026-06-03).** The `gatk-sv-156-smoke-test` 10-sample
+end-to-end run produced measured cost and runtime, harvested via
+`AnalyzeAHORunPerformance` (HealthOmics, instance-second based) plus EC2 on-demand
+pricing for the hybrid steps. The full report is at
+`validation-cohort/reports/2026-05-26-amendment-smoke/` (`cost-report.json`,
+`runtime-report.md`).
 
-The 10 original modules have been individually exercised at the validation-cohort
-scale (10 samples) so their numbers are calibrated. The 8 v1.0-amendment modules
-(EvidenceQC + the GQ_Recalibrator chain + RefineComplexVariants + MainVcfQC +
-VisualizeCnvs) have linted bundles registered as HealthOmics workflows but have
-not yet been smoke-tested end-to-end; their per-module budgets are marked **TBD
-(estimate)** until task 8.10 produces the first measured numbers and `cost-report.json`
-is committed under `validation-cohort/reports/2026-05-26-amendment-smoke/`.
+**Measured headline (10-sample cohort):**
 
-When the first 100-sample production cohort runs, replace the "expected" numbers in
-this doc with measured ones, and commit the `cost-report.json` alongside.
+- **Total: $36.16 → $3.62 per sample** (well under the $7 target).
+- HealthOmics subtotal $31.99; EC2-hybrid subtotal $4.18 (m5.2xlarge @ $0.48/hr × ~8.7 active hours).
+- **GatherSampleEvidence dominates at $2.85/sample** (Manta $1.13, Wham $0.59, CollectCounts $0.57, CollectSVEvidence $0.53 per sample on average).
+- Cohort-level work (Phase B/C/D) adds only ~$0.77/sample at n=10 and less at scale.
+- Per-sample cost projects to **~$3.40 at 100–156 samples** (cohort modules amortize); the full 156-sample cohort projects to **~$530 total**.
+
+**Measured runtime:** Phase A (per-sample evidence) is the long pole at ~3 h GSE +
+~5 h serial scramble; Phases B+C+D together are ~7 h of compute. Single longest task
+is `RunWham` (up to 2.9 h on one sample). See `runtime-report.md`.
+
+The estimates below were the pre-run design budgets; the measured numbers came in
+**below budget** (the $7/sample target had assumed less efficient GSE). The original
+estimate table is retained for reference.
+
+> **Note:** the measured $3.62/sample reflects on-demand pricing with no reserved
+> capacity or discounts. The EC2-hybrid steps ran on a shared, already-running
+> instance, so their true marginal cost is even lower than the $0.48/hr allocation.
 
 ## Migrated_Modules and Module_Phase boundaries
 

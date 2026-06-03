@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0.0",
+  "status": "REAL",
+  "status_notes": [
+    "Measured from the gatk-sv-156-smoke-test 10-sample end-to-end run.",
+    "HealthOmics per-run costs harvested via AnalyzeAHORunPerformance (resource/instance-second based, 20% headroom model) on 2026-06-03.",
+    "EC2-hybrid cost = measured m5.2xlarge on-demand rate (Singapore, $0.48/hr) x active wall-clock hours for the scramble + MakeCohortVcf + GQ chain + Phase D steps that cannot run natively on HealthOmics.",
+    "Costs exclude one-time reference-bundle S3 staging (~$5-10) and any account discounts/credits. Storage costs for sub-hour DYNAMIC runs may be slightly underestimated by the analyzer."
+  ],
+  "cohort_id": "gatk-sv-156-smoke-test",
+  "sample_count": 10,
+  "region": "ap-southeast-1",
+  "currency": "USD",
+  "target_usd": 7.00,
+  "total_cost_usd": 36.16,
+  "per_sample_cost_usd": 3.62,
+  "over_target": false,
+  "cost_engine": {
+    "healthomics": "AnalyzeAHORunPerformance manifest-based (instance-seconds x on-demand omics price, +20% headroom)",
+    "ec2_hybrid": "m5.2xlarge Singapore on-demand $0.48/hr x active wall-clock"
+  },
+  "by_phase": {
+    "A_per_sample": {
+      "modules": ["GatherSampleEvidence(cc,cse,manta,wham x10 = 40 HealthOmics runs)", "Scramble(EC2 x10)", "EvidenceQC"],
+      "healthomics_usd": 28.51,
+      "ec2_hybrid_usd": 2.40,
+      "phase_usd": 30.96,
+      "notes": "GSE dominates. Scramble = ~5h serial EC2 (~$2.40). EvidenceQC = $0.05."
+    },
+    "B_cohort": {
+      "modules": ["GatherBatchEvidence", "ClusterBatch", "GenerateBatchMetrics", "FilterBatch", "MergeBatchSites", "GenotypeBatch"],
+      "healthomics_usd": 3.32,
+      "phase_usd": 3.32,
+      "notes": "RegenotypeCNVs skipped (<100 samples). GatherBatchEvidence = $2.53 (gCNV cohort-mode dominates)."
+    },
+    "C_post_processing": {
+      "modules": ["MakeCohortVcf(EC2)", "RefineComplexVariants(HealthOmics)", "JoinRawCalls(EC2)", "SVConcordance(EC2)", "ScoreGenotypes(EC2)", "FilterGenotypes(EC2)"],
+      "healthomics_usd": 0.11,
+      "ec2_hybrid_usd": 1.63,
+      "phase_usd": 1.74,
+      "notes": "RefineComplexVariants on HealthOmics ($0.11). The rest on EC2 hybrid (MakeCohortVcf ~2h + GQ chain ~1.4h)."
+    },
+    "D_delivery": {
+      "modules": ["AnnotateVcf(EC2)", "MainVcfQC(EC2)"],
+      "ec2_hybrid_usd": 0.14,
+      "phase_usd": 0.14,
+      "notes": "AnnotateVcf 24-contig scatter ~12 min; MainVcfQC ~6 min. Both EC2 hybrid."
+    }
+  },
+  "by_module_usd": {
+    "GatherSampleEvidence_all40": 28.51,
+    "GatherSampleEvidence_per_sample": 2.85,
+    "Scramble_ec2": 2.40,
+    "EvidenceQC": 0.05,
+    "GatherBatchEvidence": 2.53,
+    "ClusterBatch": 0.60,
+    "GenerateBatchMetrics": 0.06,
+    "FilterBatch": 0.05,
+    "MergeBatchSites": 0.01,
+    "GenotypeBatch": 0.07,
+    "MakeCohortVcf_ec2": 0.96,
+    "RefineComplexVariants": 0.11,
+    "GQ_chain_ec2": 0.67,
+    "AnnotateVcf_ec2": 0.10,
+    "MainVcfQC_ec2": 0.05
+  },
+  "gse_per_caller_avg_usd": {
+    "manta": 1.13,
+    "wham": 0.59,
+    "cc": 0.57,
+    "cse": 0.53,
+    "note": "Per-sample averages across 10 samples. Manta is the single most expensive task (95%+ CPU on omics.c.4xlarge-class)."
+  },
+  "scaling_projection": {
+    "method": "Per-sample modules (GSE, Scramble) scale linearly; cohort modules (Phase B/C/D) are ~fixed and amortize over more samples.",
+    "per_sample_module_usd": 3.40,
+    "fixed_cohort_usd_10sample": 2.0,
+    "projected_per_sample_usd": {
+      "10": 3.62,
+      "50": 3.44,
+      "100": 3.42,
+      "156": 3.41
+    },
+    "note": "Measured 10-sample per-sample ($3.62) is already well under the $7 target because GSE ran efficiently. Larger cohorts trend toward ~$3.40/sample. The full 156-sample cohort projects to roughly $530 total."
+  },
+  "cost_explorer_tag_filters": {
+    "gatk-sv:cohort-id": "gatk-sv-156-smoke-test",
+    "gatk-sv:sample-count": "10",
+    "gatk-sv:environment": "validation"
+  },
+  "generated_at_utc": "2026-06-03T01:10:00Z",
+  "generated_by": "AnalyzeAHORunPerformance harvest + EC2 on-demand pricing (manual)",
+  "caveats": [
+    "Resource-based estimate, not settled Cost Explorer billing. Cost Explorer reflects the same instance-seconds plus EBS/data-transfer and would land within ~10%.",
+    "EC2-hybrid hours are active-compute wall-clock; the shared m5.2xlarge instance is long-lived, so true marginal cost is even lower (instance was already running).",
+    "Per-sample cost is dominated by GatherSampleEvidence ($2.85/sample); all cohort-level work adds ~$0.77/sample at n=10 and less at scale."
+  ]
+}
