@@ -26,9 +26,21 @@ OUTPUT_BASE_TPL = (
     f"s3://healthomics-outputs-{ACCOUNT}-apse1/runs/gatk-sv-e2e/{{cohort}}"
 )
 REF_BASE = f"s3://omics-ref-{REGION}-{ACCOUNT}/gatk-sv/reference/GRCh38"
+# COHORT_BASE is the S3 prefix where per-sample CRAM/CRAI files live.
+# Default is the 2026q2 validation cohort prefix; override via --cohort-base
+# CLI flag for runs against a different staged cohort (e.g., the 156-sample
+# open-data cohort at s3://omics-cohorts-ap-southeast-1-<account>/cohorts/gatk-sv-156).
 COHORT_BASE = (
     f"s3://omics-cohorts-{REGION}-{ACCOUNT}/cohorts/gatk-sv-validation-2026q2"
 )
+
+
+def sample_files(sample_id, cohort_base=None):
+    base = cohort_base or COHORT_BASE
+    return {
+        "cram": f"{base}/{sample_id}.final.cram",
+        "crai": f"{base}/{sample_id}.final.cram.crai",
+    }
 
 WORKFLOWS = {
     # wham: upstream Broad Whamg.wdl (single-task, single-threaded full-genome).
@@ -65,15 +77,8 @@ REF = {
 }
 
 
-def sample_files(sample_id):
-    return {
-        "cram": f"{COHORT_BASE}/{sample_id}.final.cram",
-        "crai": f"{COHORT_BASE}/{sample_id}.final.cram.crai",
-    }
-
-
-def build_params(module, sample_id):
-    s = sample_files(sample_id)
+def build_params(module, sample_id, cohort_base=None):
+    s = sample_files(sample_id, cohort_base=cohort_base)
     if module == "wham":
         return {
             "cram_or_bam": s["cram"], "cram_or_bam_idx": s["crai"],
@@ -126,11 +131,11 @@ def cost_tags(cohort_id, workflow_version, module, sample_count, environment="va
     }
 
 
-def launch_run(omics, s3, module, sample_id, cohort_id, sample_count, output_base):
+def launch_run(omics, s3, module, sample_id, cohort_id, sample_count, output_base, cohort_base=None):
     wf = WORKFLOWS[module]
     workflow_id = wf["id"]
 
-    params = build_params(module, sample_id)
+    params = build_params(module, sample_id, cohort_base=cohort_base)
     run_name = f"{module}-{sample_id}"
     output_uri = f"{output_base}/{sample_id}/gse/{module}/"
 
@@ -160,7 +165,9 @@ def load_samples():
     return [s["sample_id"] for s in json.loads(p.read_text())["samples"]]
 
 
-def main():
+def _build_parser():
+    """Construct the argparse parser. Factored out so unit tests can introspect
+    the flag set without invoking main()."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--cohort-id", required=True)
     ap.add_argument("--samples", help="Comma-separated; default = all from manifest")
@@ -171,6 +178,16 @@ def main():
     ap.add_argument("--delay", type=float, default=1.0)
     ap.add_argument("--output", default=None,
                     help="Run manifest output path (default: gse-cohort-runs-<cohort-id>.json)")
+    ap.add_argument("--cohort-base", default=None,
+                    help="S3 prefix where per-sample CRAM/CRAI files live "
+                         "(e.g. s3://omics-cohorts-ap-southeast-1-<account>/cohorts/gatk-sv-156). "
+                         "When omitted, falls back to the module-level COHORT_BASE constant "
+                         "(the 2026q2 validation cohort prefix).")
+    return ap
+
+
+def main():
+    ap = _build_parser()
     args = ap.parse_args()
 
     samples = args.samples.split(",") if args.samples else load_samples()
@@ -185,10 +202,11 @@ def main():
     sample_count = len(samples)
     output_base = OUTPUT_BASE_TPL.format(cohort=args.cohort_id)
 
-    print(f"Cohort:  {args.cohort_id}")
-    print(f"Samples: {sample_count}  ({', '.join(samples)})")
-    print(f"Modules: {', '.join(modules)}")
-    print(f"Total:   {sample_count * len(modules)} runs")
+    print(f"Cohort:      {args.cohort_id}")
+    print(f"Cohort base: {args.cohort_base or COHORT_BASE}")
+    print(f"Samples:     {sample_count}  ({', '.join(samples)})")
+    print(f"Modules:     {', '.join(modules)}")
+    print(f"Total:       {sample_count * len(modules)} runs")
     print()
 
     omics = boto3.client("omics", region_name=REGION)
@@ -199,7 +217,10 @@ def main():
         print(f"[{sid}]")
         for mod in modules:
             try:
-                rec = launch_run(omics, s3, mod, sid, args.cohort_id, sample_count, output_base)
+                rec = launch_run(
+                    omics, s3, mod, sid, args.cohort_id, sample_count, output_base,
+                    cohort_base=args.cohort_base,
+                )
                 launched.append(rec)
             except Exception as e:
                 print(f"  \u2717 {mod}-{sid}: {e}")

@@ -1,6 +1,11 @@
 {
   "cohort_id": "gatk-sv-validation-2026q2",
   "reference_build": "GRCh38",
+  "expected_post_gq_vcf": "s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/gatk-sv-validation-2026q2.post-gq.cleaned.vcf.gz",
+  "expected_post_gq_vcf_index": "s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/gatk-sv-validation-2026q2.post-gq.cleaned.vcf.gz.tbi",
+  "expected_post_gq_vcf_sha256": null,
+  "expected_post_gq_vcf_status": "PENDING_FIRST_VALIDATION_RUN",
+  "expected_post_gq_vcf_notes": "Reference Cohort_VCF at the post-FilterGenotypes (pre-AnnotateVcf) stage of the GQ_Recalibrator chain (JoinRawCalls -> SVConcordance -> ScoreGenotypes -> FilterGenotypes). Used by the validation harness to gate concordance against the GQ-recalibrated VCF per Req 19.8 with the same per-SV-type thresholds declared in Req 13.3. Distinct from the post-AnnotateVcf expected.vcf.gz used by the original concordance gate (Req 13.1, 13.2). Path uses the __ACCOUNT_ID__ placeholder; the binary VCF and .tbi are produced once on Terra/Cromwell-on-GCP per docs/validation-runbook.md and are not committed. The sha256 and status fields are filled when the artifact is first produced; until then the validation harness skips the post-GQ concordance gate.",
   "samples": [
     {"sample_id": "NA12878", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA12878.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/NA12878.final.cram.crai", "sex": "F"},
     {"sample_id": "HG00096", "reads_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00096.final.cram", "index_uri": "s3://omics-cohorts-ap-southeast-1-__ACCOUNT_ID__/cohorts/gatk-sv-validation-2026q2/HG00096.final.cram.crai", "sex": "M"},

@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "status": "SCAFFOLD",
+  "status_notes": [
+    "This is a schema-only placeholder committed at the Task 6.5 checkpoint; no real cohort has run against it.",
+    "Field semantics: Design §Data Models -> 'Cost Report' and gatk_sv_aws.validation.ValidationCostReport.",
+    "When a real cohort run completes, replace null/[] values with measured numbers, flip status to 'REAL', set generated_at_utc to the run-completion timestamp, and populate runs[] with one entry per module run."
+  ],
+  "cohort_id": "gatk-sv-validation-2026q2",
+  "sample_count": 10,
+  "region": "ap-southeast-1",
+  "currency": "USD",
+  "target_usd": 7.00,
+  "total_cost_usd": null,
+  "per_sample_cost_usd": null,
+  "over_target": null,
+  "by_module": {
+    "GatherSampleEvidence": null,
+    "GatherBatchEvidence": null,
+    "ClusterBatch": null,
+    "GenerateBatchMetrics": null,
+    "FilterBatch": null,
+    "MergeBatchSites": null,
+    "GenotypeBatch": null,
+    "RegenotypeCNVs": null,
+    "MakeCohortVcf": null,
+    "AnnotateVcf": null
+  },
+  "by_phase": {
+    "A_per_sample": null,
+    "B_cohort": null,
+    "C_post_processing": null,
+    "D_delivery": null
+  },
+  "runs": [],
+  "attribution": [],
+  "recommendations": [],
+  "cost_explorer_tag_filters": {
+    "gatk-sv:cohort-id": "gatk-sv-validation-2026q2",
+    "gatk-sv:workflow-version": null,
+    "gatk-sv:module": null,
+    "gatk-sv:sample-count": "10",
+    "gatk-sv:environment": "validation"
+  },
+  "generated_at_utc": null,
+  "generated_by": null,
+  "links": {
+    "design_data_model": ".kiro/specs/gatk-sv-healthomics-migration/design.md#cost-report",
+    "requirements": [
+      "Req 8.5",
+      "Req 8.7",
+      "Req 13.4",
+      "Req 13.5"
+    ],
+    "validator_module": "python/src/gatk_sv_aws/validation/__init__.py:ValidationCostReport",
+    "consuming_test": "python/tests/acceptance/test_per_sample_cost.py"
+  }
+}

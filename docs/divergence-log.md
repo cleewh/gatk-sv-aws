@@ -228,3 +228,159 @@ RUN_ACCEPTANCE_TESTS=1 pytest \
 
 Implementation in
 `kiro_life_sciences.gatk_sv_healthomics.validation.divergence.diff_artifact`.
+
+## Phase 8: v1.0 module-completeness amendment (Req 19.1–19.5)
+
+The original 10-module migration (Phase 1–7) was packaged against
+`broadinstitute/gatk-sv` HEAD `7eb2af1feea9`. To close the v1.0 module-completeness
+gap (Req 19.1: "include all v1.0 modules used by the upstream Broad reference
+pipeline"), the Migration System ports 8 additional modules from the
+`broadinstitute/gatk-sv@v1.1` release tag.
+
+**Upstream commit pinned for the Phase 8 amendment:** `a1be457` (`v1.1` release tag).
+
+**Packager:** `scripts/migrate_v1_modules.py`. The packager clones
+`broadinstitute/gatk-sv` at the pinned commit, copies the listed `wdl/*.wdl` entry
+points plus their transitively-imported sub-WDLs, applies the standard policy
+divergences (MELT excision, `gs://` URI rejection, container tag pinning), and
+emits the lint-clean ZIP plus a per-module `divergence.json` under
+`wdl/bundles/<Module>/`.
+
+**EvidenceQC compatibility patches** (additional, applied on top of the standard
+divergences — see `docs/wdl-audit.md` "Validation iterations" for the full
+debug timeline):
+
+- `scripts/patch_evidence_qc.py` (v1) — drops the post-scatter aggregator tasks
+  `PickOutliers` and `MergeVariantCounts` from `RawVcfQC.wdl` to dodge the
+  HealthOmics 47-second kill on aggregator tasks. Per-sample stats remain as
+  workflow outputs.
+- `scripts/patch_evidence_qc_v2.py` (v2) — gates the second `if (run_ploidy)`
+  block in `EvidenceQC.wdl` on `run_ploidy && run_vcf_qc`, suppressing
+  `CreateVariantCountPlots` and `MakeQcTable` when `run_vcf_qc=False`.
+- `scripts/patch_evidence_qc_v3.py` (v3) — strips 16 orphan
+  `File? <caller>_qc_*/<caller>_variant_counts = "NONE"` declarations and the
+  `qc_table = MakeQcTable.qc_table` declaration from the workflow output block;
+  rewrites `ploidy_plots` to use `Ploidy.ploidy_plots` directly.
+
+### Per-module Phase 8 inventory
+
+For each module: upstream WDL path within `broadinstitute/gatk-sv@a1be457`, the
+transitive imports pulled in by the packager (also recorded in
+`wdl/bundles/<Module>/divergence.json` `files` array), and the divergences from
+upstream applied during packaging.
+
+#### EvidenceQC
+
+- **Phase:** A.6 (per-sample QC, gates Phase B).
+- **Upstream entry point:** `wdl/EvidenceQC.wdl` @ `a1be457`.
+- **Imports (transitive):** `MakeBincovMatrix.wdl`, `MedianCov.wdl`,
+  `PloidyEstimation.wdl`, `RawVcfQC.wdl`, `Structs.wdl`, `WGD.wdl`.
+- **Bundle:** `wdl/bundles/EvidenceQC/EvidenceQC-bundle.zip`.
+- **Divergences from upstream:**
+  1. `remove_caller` — MELT references stripped from `EvidenceQC.wdl` per Req 23.3.
+  2. `patch_workflow` (v1) — `RawVcfQC.wdl` post-scatter aggregators
+     (`PickOutliers`, `MergeVariantCounts`) dropped to dodge the HealthOmics
+     47-second kill.
+  3. `patch_workflow` (v1 follow-up) — `EvidenceQC.wdl` `RawVcfQC_<caller>.{high,low,variant_counts}`
+     references substituted with `"NONE"` sentinels.
+  4. `patch_workflow` (v2) — second `if (run_ploidy)` block in `EvidenceQC.wdl`
+     gated on `run_ploidy && run_vcf_qc`.
+  5. `patch_workflow` (v3) — 15 orphan `File?` variant-count output declarations
+     and `qc_table` declaration removed from `EvidenceQC.wdl` workflow output
+     block; `ploidy_plots` rewritten to `Ploidy.ploidy_plots`.
+
+#### RefineComplexVariants
+
+- **Phase:** C.1 (post-CleanVcf complex SV refinement).
+- **Upstream entry point:** `wdl/RefineComplexVariants.wdl` @ `a1be457`.
+- **Imports (transitive):** `CollectLargeCNVSupportForCPX.wdl`,
+  `CollectPEMetricsForCPX.wdl`, `CollectPEMetricsPerBatchCPX.wdl`, `Structs.wdl`,
+  `TasksMakeCohortVcf.wdl`, `Utils.wdl`.
+- **Bundle:** `wdl/bundles/RefineComplexVariants/RefineComplexVariants-bundle.zip`.
+- **Divergences from upstream:** none (no MELT references; no `gs://` URIs).
+
+#### JoinRawCalls
+
+- **Phase:** C.2 (GQ_Recalibrator step 1/4).
+- **Upstream entry point:** `wdl/JoinRawCalls.wdl` @ `a1be457`.
+- **Imports (transitive):** `FormatVcfForGatk.wdl`, `Structs.wdl`,
+  `TasksClusterBatch.wdl`, `TasksMakeCohortVcf.wdl`.
+- **Bundle:** `wdl/bundles/JoinRawCalls/JoinRawCalls-bundle.zip`.
+- **Divergences from upstream:**
+  1. `remove_caller` — MELT references stripped from `JoinRawCalls.wdl` per Req 23.3.
+
+#### SVConcordance
+
+- **Phase:** C.3 (GQ_Recalibrator step 2/4).
+- **Upstream entry point:** `wdl/SVConcordance.wdl` @ `a1be457`.
+- **Imports (transitive):** `Structs.wdl`, `TasksMakeCohortVcf.wdl`.
+- **Bundle:** `wdl/bundles/SVConcordance/SVConcordance-bundle.zip`.
+- **Divergences from upstream:** none.
+
+#### ScoreGenotypes
+
+- **Phase:** C.4 (GQ_Recalibrator step 3/4).
+- **Upstream entry point:** `wdl/ScoreGenotypes.wdl` @ `a1be457`.
+- **Imports (transitive):** `RecalibrateGq.wdl`, `Structs.wdl`,
+  `TasksMakeCohortVcf.wdl`, `TrainGqRecalibrator.wdl`, `Utils.wdl`.
+- **Bundle:** `wdl/bundles/ScoreGenotypes/ScoreGenotypes-bundle.zip`.
+- **Divergences from upstream:** none.
+
+#### FilterGenotypes
+
+- **Phase:** C.5 (GQ_Recalibrator step 4/4).
+- **Upstream entry point:** `wdl/FilterGenotypes.wdl` @ `a1be457`.
+- **Imports (transitive):** `CollectPerSampleBenchmarking.wdl`,
+  `CollectQcPerSample.wdl`, `CollectQcVcfWide.wdl`,
+  `CollectSiteLevelBenchmarking.wdl`, `MainVcfQc.wdl`, `Structs.wdl`,
+  `TasksMakeCohortVcf.wdl`, `Utils.wdl`.
+- **Bundle:** `wdl/bundles/FilterGenotypes/FilterGenotypes-bundle.zip`.
+- **Divergences from upstream:**
+  1. `rejected_uri` — `gs://` URI rewritten in `FilterGenotypes.wdl` per Req 2.6.
+  2. `rejected_uri` — `gs://` URI rewritten in transitively-imported
+     `MainVcfQc.wdl` per Req 2.6.
+
+#### MainVcfQC
+
+- **Phase:** D.2 (cohort-level QC plots).
+- **Upstream entry point:** `wdl/MainVcfQc.wdl` @ `a1be457` (note the upstream
+  filename uses lower-case `c`; the Migration System bundle directory is
+  `MainVcfQC`).
+- **Imports (transitive):** `CollectPerSampleBenchmarking.wdl`,
+  `CollectQcPerSample.wdl`, `CollectQcVcfWide.wdl`,
+  `CollectSiteLevelBenchmarking.wdl`, `Structs.wdl`,
+  `TasksMakeCohortVcf.wdl`, `Utils.wdl`.
+- **Bundle:** `wdl/bundles/MainVcfQC/MainVcfQC-bundle.zip`.
+- **Divergences from upstream:**
+  1. `rejected_uri` — `gs://` URI rewritten in `MainVcfQc.wdl` per Req 2.6.
+
+#### VisualizeCnvs
+
+- **Phase:** D.3 (optional per-CNV PNGs).
+- **Upstream entry point:** `wdl/VisualizeCnvs.wdl` @ `a1be457`.
+- **Imports (transitive):** `Structs.wdl`.
+- **Bundle:** `wdl/bundles/VisualizeCnvs/VisualizeCnvs-bundle.zip`.
+- **Divergences from upstream:** none.
+
+### Phase 8 packaging summary
+
+| Module | Divergences | Lint status |
+|---|---|---|
+| `EvidenceQC` | 5 (1 MELT + 4 EvidenceQC patches v1/v2/v3) | ✓ clean |
+| `RefineComplexVariants` | 0 | ✓ clean |
+| `JoinRawCalls` | 1 (MELT) | ✓ clean |
+| `SVConcordance` | 0 | ✓ clean |
+| `ScoreGenotypes` | 0 | ✓ clean |
+| `FilterGenotypes` | 2 (gs:// rewrites in `FilterGenotypes.wdl` + `MainVcfQc.wdl`) | ✓ clean |
+| `MainVcfQC` | 1 (gs:// rewrite in `MainVcfQc.wdl`) | ✓ clean |
+| `VisualizeCnvs` | 0 | ✓ clean |
+
+The standard `MELT` and `gs://` policy divergences (sections 1 and 2 of this log)
+apply to every Phase 8 module that references them; per-module specifics are
+listed above. The EvidenceQC v1/v2/v3 patches are HealthOmics engine-compatibility
+patches (analogous to the Cromwell-vs-miniwdl patches in section B), not logic
+changes — see `docs/wdl-audit.md` "Validation iterations 2026-05-27 / 2026-05-28"
+for the iterate-and-patch debug timeline.
+
+The Phase 8 amendment is also documented in `docs/wdl-audit.md` under the
+"v1.0 module-completeness amendment (Req 19, 2026-05-26)" section.

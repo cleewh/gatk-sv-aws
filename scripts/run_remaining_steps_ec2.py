@@ -37,12 +37,28 @@ ACCOUNT = os.environ.get("AWS_ACCOUNT_ID", "__ACCOUNT_ID__")
 INSTANCE_ID = os.environ.get("GATK_SV_EC2_INSTANCE_ID", "__EC2_INSTANCE_ID__")
 OUTPUT_BUCKET = f"healthomics-outputs-{ACCOUNT}-apse1"
 REF_BASE = f"s3://omics-ref-{REGION}-{ACCOUNT}/gatk-sv/reference/GRCh38"
-EC2_OUT_PREFIX = (
-    f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch/"
-    f"make-cohort-vcf-ec2/combine_batches"
-)
 COHORT_DEFAULT = "gatk-sv-validation-2026q2"
-SAMPLE_COUNT = 10
+SAMPLE_COUNT = int(os.environ.get("GATK_SV_SAMPLE_COUNT", "10"))
+
+# Per-cohort wiring. All default to the 2026q2 validation cohort layout
+# (legacy, cohort-less make-cohort-vcf-ec2 prefix + hardcoded Phase B run
+# IDs) for backward compatibility. Override via env vars for a specific
+# cohort run:
+#   MCV_COMBINE_BATCHES_PREFIX  full s3:// prefix holding the CombineBatches
+#                               svtk_formatted VCFs + SR lists
+#   MCV_GENOTYPED_DEPTH_VCF     genotyped depth VCF (GenotypeBatch output)
+#   MCV_DISC_FILE / MCV_DISC_FILE_IDX     merged PE (GBE)
+#   MCV_BINCOV_FILE / MCV_BINCOV_FILE_IDX merged bincov/RD (GBE)
+#   MCV_RD_TABLE                genotyping_rd_table (GenotypeBatch)
+#   MCV_MEDIAN_COV              median coverage bed (GBE)
+#   MCV_RF_CUTOFFS              FilterBatch cutoffs
+#   MCV_PED_BASENAME            ped file basename in the reference bucket
+#   MCV_BATCH_NAME              per-batch label embedded in array inputs
+_LEGACY_BATCH = "batch_01"
+EC2_OUT_PREFIX = os.environ.get(
+    "MCV_COMBINE_BATCHES_PREFIX",
+    f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch/make-cohort-vcf-ec2/combine_batches",
+)
 RUN_BUCKET_PREFIX = (
     f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch/"
     "mcv-remaining-steps-ec2"
@@ -61,7 +77,12 @@ CONTIGS = [
 
 
 def build_inputs_json(cohort: str) -> dict:
-    """Compose the miniwdl input JSON, matching MakeCohortVcfRemainingSteps."""
+    """Compose the miniwdl input JSON, matching MakeCohortVcfRemainingSteps.
+
+    Per-batch evidence inputs default to the 2026q2 validation-cohort run IDs
+    for backward compatibility; override the MCV_* env vars (see top of file)
+    for a different cohort.
+    """
     combined_vcfs = [
         f"{EC2_OUT_PREFIX}/{cohort}.combine_batches.{c}.svtk_formatted.vcf.gz"
         for c in CONTIGS
@@ -76,49 +97,56 @@ def build_inputs_json(cohort: str) -> dict:
         for c in CONTIGS
     ]
 
-    out_uri_base = (
-        f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch"
+    out_uri_base = f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/batch"
+    batch = os.environ.get("MCV_BATCH_NAME", _LEGACY_BATCH)
+
+    depth_vcf = os.environ.get(
+        "MCV_GENOTYPED_DEPTH_VCF",
+        f"{out_uri_base}/genotype-batch/3154916/out/genotyped_depth_vcf/"
+        f"{batch}.genotype_batch.depth.vcf.gz",
     )
+    disc_file = os.environ.get(
+        "MCV_DISC_FILE",
+        f"{out_uri_base}/gather-batch-evidence/6129002/out/merged_PE/{batch}.pe.txt.gz",
+    )
+    disc_file_idx = os.environ.get("MCV_DISC_FILE_IDX", disc_file + ".tbi")
+    bincov_file = os.environ.get(
+        "MCV_BINCOV_FILE",
+        f"{out_uri_base}/gather-batch-evidence/6129002/out/merged_bincov/{batch}.RD.txt.gz",
+    )
+    bincov_file_idx = os.environ.get("MCV_BINCOV_FILE_IDX", bincov_file + ".tbi")
+    rd_table = os.environ.get(
+        "MCV_RD_TABLE",
+        f"{out_uri_base}/genotype-batch/3154916/out/genotyping_rd_table/"
+        f"{batch}.rd_geno_params.tsv",
+    )
+    median_cov = os.environ.get(
+        "MCV_MEDIAN_COV",
+        f"{out_uri_base}/gather-batch-evidence/6129002/out/median_cov/"
+        f"{batch}_medianCov.transposed.bed",
+    )
+    rf_cutoffs = os.environ.get(
+        "MCV_RF_CUTOFFS",
+        f"{out_uri_base}/filter-batch/5070716/out/cutoffs/{batch}.cutoffs",
+    )
+    ped_basename = os.environ.get("MCV_PED_BASENAME", "cohort.ped")
 
     inputs = {
         "MakeCohortVcfRemainingSteps.cohort_name": cohort,
-        "MakeCohortVcfRemainingSteps.batches": ["batch_01"],
-        "MakeCohortVcfRemainingSteps.ped_file": f"{REF_BASE}/cohort.ped",
+        "MakeCohortVcfRemainingSteps.batches": [batch],
+        "MakeCohortVcfRemainingSteps.ped_file": f"{REF_BASE}/{ped_basename}",
         "MakeCohortVcfRemainingSteps.combined_vcfs": combined_vcfs,
         "MakeCohortVcfRemainingSteps.combined_vcf_indexes": combined_vcf_indexes,
         "MakeCohortVcfRemainingSteps.cluster_bothside_pass_lists": bothside_pass,
         "MakeCohortVcfRemainingSteps.cluster_background_fail_lists": background_fail,
-        "MakeCohortVcfRemainingSteps.depth_vcfs": [
-            f"{out_uri_base}/genotype-batch/3154916/out/genotyped_depth_vcf/"
-            f"batch_01.genotype_batch.depth.vcf.gz"
-        ],
-        "MakeCohortVcfRemainingSteps.disc_files": [
-            f"{out_uri_base}/gather-batch-evidence/6129002/out/merged_PE/"
-            f"batch_01.pe.txt.gz"
-        ],
-        "MakeCohortVcfRemainingSteps.disc_files_idx": [
-            f"{out_uri_base}/gather-batch-evidence/6129002/out/merged_PE/"
-            f"batch_01.pe.txt.gz.tbi"
-        ],
-        "MakeCohortVcfRemainingSteps.bincov_files": [
-            f"{out_uri_base}/gather-batch-evidence/6129002/out/merged_bincov/"
-            f"batch_01.RD.txt.gz"
-        ],
-        "MakeCohortVcfRemainingSteps.bincov_files_idx": [
-            f"{out_uri_base}/gather-batch-evidence/6129002/out/merged_bincov/"
-            f"batch_01.RD.txt.gz.tbi"
-        ],
-        "MakeCohortVcfRemainingSteps.genotyping_rd_tables": [
-            f"{out_uri_base}/genotype-batch/3154916/out/genotyping_rd_table/"
-            f"batch_01.rd_geno_params.tsv"
-        ],
-        "MakeCohortVcfRemainingSteps.median_coverage_files": [
-            f"{out_uri_base}/gather-batch-evidence/6129002/out/median_cov/"
-            f"batch_01_medianCov.transposed.bed"
-        ],
-        "MakeCohortVcfRemainingSteps.rf_cutoff_files": [
-            f"{out_uri_base}/filter-batch/5070716/out/cutoffs/batch_01.cutoffs"
-        ],
+        "MakeCohortVcfRemainingSteps.depth_vcfs": [depth_vcf],
+        "MakeCohortVcfRemainingSteps.disc_files": [disc_file],
+        "MakeCohortVcfRemainingSteps.disc_files_idx": [disc_file_idx],
+        "MakeCohortVcfRemainingSteps.bincov_files": [bincov_file],
+        "MakeCohortVcfRemainingSteps.bincov_files_idx": [bincov_file_idx],
+        "MakeCohortVcfRemainingSteps.genotyping_rd_tables": [rd_table],
+        "MakeCohortVcfRemainingSteps.median_coverage_files": [median_cov],
+        "MakeCohortVcfRemainingSteps.rf_cutoff_files": [rf_cutoffs],
         "MakeCohortVcfRemainingSteps.reference_dict": (
             f"{REF_BASE}/Homo_sapiens_assembly38.dict"
         ),

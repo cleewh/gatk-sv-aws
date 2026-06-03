@@ -48,31 +48,39 @@ LOGS=$ROOT/logs
 REF_BUCKET="omics-ref-ap-southeast-1-${ACCOUNT_ID}"
 REF_PREFIX="gatk-sv/reference/GRCh38"
 OUT_BUCKET="healthomics-outputs-${ACCOUNT_ID}-apse1"
-OUT_PREFIX="runs/gatk-sv-e2e/batch/make-cohort-vcf-ec2"
+# OUT_PREFIX defaults to the legacy (cohort-less) layout for backward compat;
+# override with a cohort-scoped prefix for a specific cohort run.
+OUT_PREFIX="${COMBINEBATCHES_OUT_PREFIX:-runs/gatk-sv-e2e/batch/make-cohort-vcf-ec2}"
+
+# Genotyped per-batch VCFs from Phase B GenotypeBatch. Defaults target the
+# 2026q2 validation cohort (genotype-batch run 3154916, batch_01 filenames).
+# Override GENOTYPED_PESR_S3 / GENOTYPED_DEPTH_S3 for a different cohort.
+GENOTYPED_PESR_S3="${GENOTYPED_PESR_S3:-s3://${OUT_BUCKET}/runs/gatk-sv-e2e/batch/genotype-batch/3154916/out/genotyped_pesr_vcf/batch_01.genotype_batch.pesr.vcf.gz}"
+GENOTYPED_DEPTH_S3="${GENOTYPED_DEPTH_S3:-s3://${OUT_BUCKET}/runs/gatk-sv-e2e/batch/genotype-batch/3154916/out/genotyped_depth_vcf/batch_01.genotype_batch.depth.vcf.gz}"
+# Ped file basename in the reference bucket (override for a cohort-specific ped).
+PED_BASENAME="${PED_BASENAME:-cohort.ped}"
 
 echo "=========================================="
 echo "Stage 1: Download inputs and references"
 echo "=========================================="
 
 cd $INPUTS
-for f in batch_01.genotype_batch.pesr.vcf.gz \
-         batch_01.genotype_batch.pesr.vcf.gz.tbi \
-         batch_01.genotype_batch.depth.vcf.gz \
-         batch_01.genotype_batch.depth.vcf.gz.tbi; do
-    if [ ! -f $f ]; then
-        case $f in
-            *pesr*) aws s3 cp s3://$OUT_BUCKET/runs/gatk-sv-e2e/batch/genotype-batch/3154916/out/genotyped_pesr_vcf/$f . --quiet ;;
-            *depth*) aws s3 cp s3://$OUT_BUCKET/runs/gatk-sv-e2e/batch/genotype-batch/3154916/out/genotyped_depth_vcf/$f . --quiet ;;
-        esac
-    fi
-done
+# Download genotyped per-batch VCFs (+ indexes) to stable local names.
+if [ ! -f genotyped.pesr.vcf.gz ]; then
+    aws s3 cp "$GENOTYPED_PESR_S3" genotyped.pesr.vcf.gz --quiet
+    aws s3 cp "$GENOTYPED_PESR_S3.tbi" genotyped.pesr.vcf.gz.tbi --quiet
+fi
+if [ ! -f genotyped.depth.vcf.gz ]; then
+    aws s3 cp "$GENOTYPED_DEPTH_S3" genotyped.depth.vcf.gz --quiet
+    aws s3 cp "$GENOTYPED_DEPTH_S3.tbi" genotyped.depth.vcf.gz.tbi --quiet
+fi
 
 cd $REFS
 for f in Homo_sapiens_assembly38.fasta \
          Homo_sapiens_assembly38.fasta.fai \
          Homo_sapiens_assembly38.dict \
          gs_primary_contigs.list \
-         cohort.ped \
+         "$PED_BASENAME" \
          gs_clustering_config.part_one.tsv \
          gs_clustering_config.part_two.tsv \
          stratify_config.v2.part_one.tsv \
@@ -105,7 +113,7 @@ if [ ! -f cohort.ploidy.tsv ]; then
     docker run --rm -v $REFS:/refs -v $WORK:/work -w /work \
       $SV_PIPELINE_DOCKER \
       python /opt/sv-pipeline/scripts/ploidy_table_from_ped.py \
-        --ped /refs/cohort.ped \
+        --ped /refs/$PED_BASENAME \
         --out /work/cohort.ploidy.FEMALE_chrY_1.tsv \
         --contigs /refs/gs_primary_contigs.list \
         --chr-x chrX --chr-y chrY
@@ -137,8 +145,8 @@ for CONTIG in $CONTIGS; do
     if [ ! -f "$WORK/$PREFIX.join_vcfs.vcf.gz" ]; then
         echo "  [JoinVcfs] $(date -u +%H:%M:%S)"
         cat > $WORK/$PREFIX.joinvcfs.args <<EOF
--V /inputs/batch_01.genotype_batch.pesr.vcf.gz
--V /inputs/batch_01.genotype_batch.depth.vcf.gz
+-V /inputs/genotyped.pesr.vcf.gz
+-V /inputs/genotyped.depth.vcf.gz
 EOF
         docker run --rm -v $REFS:/refs -v $INPUTS:/inputs -v $WORK:/work -w /work \
           $GATK_DOCKER \
@@ -263,11 +271,14 @@ echo "=========================================="
 S3_TAGGING="gatk-sv%3Acohort-id=${COHORT}&gatk-sv%3Aworkflow-version=combinebatches-ec2-bash&gatk-sv%3Amodule=MakeCohortVcf%3ACombineBatches&gatk-sv%3Asample-count=${SAMPLE_COUNT}&gatk-sv%3Aenvironment=${ENVIRONMENT}"
 
 # aws s3 sync doesn't accept --tagging, so upload object-by-object via cp.
+# Tagging is best-effort: if the awscli build rejects the encoded --tagging
+# string, fall back to an untagged upload so the (expensive) compute outputs
+# are never lost to a metadata-only failure.
 for f in "$OUTPUTS"/*; do
     base="$(basename "$f")"
-    aws s3 cp "$f" "s3://$OUT_BUCKET/$OUT_PREFIX/combine_batches/$base" \
-        --quiet \
-        --tagging "$S3_TAGGING"
+    dest="s3://$OUT_BUCKET/$OUT_PREFIX/combine_batches/$base"
+    aws s3 cp "$f" "$dest" --quiet --tagging "$S3_TAGGING" \
+      || aws s3 cp "$f" "$dest" --quiet
 done
 
 echo

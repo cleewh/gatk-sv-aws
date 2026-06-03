@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0.0",
+  "status": "SCAFFOLD",
+  "status_notes": [
+    "This is a schema-only placeholder committed at the Task 6.5 checkpoint; no real cohort has run against it.",
+    "Field semantics: gatk_sv_aws.validation.ConcordanceReport (strict, Task 3.10.1) and gatk_sv_aws.validation.fuzzy.compare_cohort_vcf_fuzzy (fuzzy, Task 3.10.3).",
+    "When a real cohort run completes, populate expected_vcf_sha256 and produced_vcf_sha256 with the SHA-256 digests of the inputs, fill in n_expected/n_produced/n_intersection/concordance_pct per SV type for both the strict and fuzzy joins, set passed/overall_pass per the gate thresholds in MIN_CONCORDANCE, flip status to 'REAL', and set generated_at_utc."
+  ],
+  "cohort_id": "gatk-sv-validation-2026q2",
+  "reference_build": "GRCh38",
+  "sample_count": 10,
+  "expected_vcf_path": "validation-cohort/expected/expected.vcf.gz",
+  "expected_vcf_sha256": null,
+  "produced_vcf_path": "validation-cohort/produced/cohort.vcf.gz",
+  "produced_vcf_sha256": null,
+  "thresholds": {
+    "DEL": 0.99,
+    "DUP": 0.99,
+    "INS": 0.95,
+    "INV": 0.95
+  },
+  "strict": {
+    "join_keys": ["CHROM", "POS", "SVTYPE"],
+    "by_sv_type": {
+      "DEL": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 99.0,
+        "passed": null
+      },
+      "DUP": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 99.0,
+        "passed": null
+      },
+      "INS": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 95.0,
+        "passed": null
+      },
+      "INV": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 95.0,
+        "passed": null
+      }
+    },
+    "overall_pass": null,
+    "discordant_sites": []
+  },
+  "fuzzy_50bp": {
+    "join_keys": ["CHROM", "POS_within_50bp", "SVTYPE"],
+    "pos_fuzz_bp": 50,
+    "by_sv_type": {
+      "DEL": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 99.0,
+        "passed": null
+      },
+      "DUP": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 99.0,
+        "passed": null
+      },
+      "INS": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 95.0,
+        "passed": null
+      },
+      "INV": {
+        "n_expected": null,
+        "n_produced": null,
+        "n_intersection": null,
+        "concordance_pct": null,
+        "threshold_pct": 95.0,
+        "passed": null
+      }
+    },
+    "overall_pass": null,
+    "discordant_sites": []
+  },
+  "generated_at_utc": null,
+  "generated_by": null,
+  "links": {
+    "design_section": ".kiro/specs/gatk-sv-healthomics-migration/design.md#components.j",
+    "requirements": [
+      "Req 13.1",
+      "Req 13.2",
+      "Req 13.3"
+    ],
+    "validator_module": "python/src/gatk_sv_aws/validation/__init__.py",
+    "fuzzy_validator_module": "python/src/gatk_sv_aws/validation/fuzzy.py",
+    "consuming_test": "python/tests/acceptance/test_validation_concordance.py",
+    "expected_metadata": "validation-cohort/expected/expected-metadata.json"
+  }
+}

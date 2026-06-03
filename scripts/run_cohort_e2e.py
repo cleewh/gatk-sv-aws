@@ -202,6 +202,122 @@ TERMINAL_STATUSES = {"COMPLETED", "FAILED", "CANCELLED", "DELETED"}
 
 
 # --------------------------------------------------------------------------- #
+# Module_Phase boundaries (Req 19.1–19.6, Req 14.1, 14.2)
+# --------------------------------------------------------------------------- #
+# Each StageRecord.stage value maps to exactly one of the four upstream
+# GATK-SV v1.0 Module_Phase boundaries. The CLI exposes a `--skip-phase-*`
+# flag for each boundary; failure of one phase blocks subsequent phases
+# unless the corresponding `--skip-phase-*` flag was set.
+#
+#   Phase A (per-sample):     GSE fan-out, scramble-EC2, EvidenceQC
+#   Phase B (cohort):         GBE -> ClusterBatch -> ... -> GenotypeBatch
+#                             (RegenotypeCNVs activated when sample_count >= 100)
+#   Phase C (post-processing): MakeCohortVcf hybrid + RefineComplexVariants
+#                             + GQ_Recalibrator chain (JoinRawCalls, SVConcordance,
+#                             ScoreGenotypes, FilterGenotypes)
+#   Phase D (delivery):       AnnotateVcf, MainVcfQC, optional VisualizeCnvs
+PHASE_A_STAGES = frozenset({"evidence_qc"})       # plus GSE:* and scramble_ec2:* prefixes
+PHASE_B_STAGES = frozenset({
+    "gather_batch_evidence", "cluster_batch", "generate_batch_metrics",
+    "filter_batch", "merge_batch_sites", "genotype_batch", "regenotype_cnvs",
+})
+PHASE_C_STAGES = frozenset({
+    "combinebatches_ec2", "remaining_steps_ec2",
+    "refine_complex_variants", "join_raw_calls", "sv_concordance",
+    "score_genotypes", "filter_genotypes",
+})
+PHASE_D_STAGES = frozenset({"annotate_vcf", "main_vcf_qc", "visualize_cnvs"})
+
+# Stage-status values that indicate the stage finished successfully or was
+# intentionally bypassed; anything else (FAILED, CANCELLED, TimedOut, …)
+# blocks downstream phases unless the user opts in with --skip-phase-*.
+_OK_STATUSES = frozenset({"COMPLETED", "Success", "SKIPPED"})
+
+
+def _classify_phase(stage: str) -> str:
+    """Return "A" | "B" | "C" | "D" | "" for the stage name on a StageRecord."""
+    if stage.startswith("GSE:") or stage.startswith("scramble_ec2:"):
+        return "A"
+    if stage in PHASE_A_STAGES:
+        return "A"
+    if stage in PHASE_B_STAGES:
+        return "B"
+    if stage in PHASE_C_STAGES:
+        return "C"
+    if stage in PHASE_D_STAGES:
+        return "D"
+    return ""
+
+
+def _summarize_phase(records: list["StageRecord"], phase: str) -> dict[str, Any]:
+    """Build a {start, stop, status, records_count, ...} dict for one phase.
+
+    Status rules:
+      * if every record's status is in _OK_STATUSES -> COMPLETED (or SKIPPED
+        when every record is SKIPPED)
+      * else -> FAILED (with the first non-OK status surfaced as `error_status`)
+      * if no records belong to the phase -> NOT_STARTED
+    """
+    phase_records = [r for r in records if _classify_phase(r.stage) == phase]
+    if not phase_records:
+        return {
+            "phase": phase,
+            "status": "NOT_STARTED",
+            "records_count": 0,
+            "start": None,
+            "stop": None,
+        }
+    statuses = [r.status for r in phase_records]
+    if all(s == "SKIPPED" for s in statuses):
+        outcome = "SKIPPED"
+        bad = None
+    elif all(s in _OK_STATUSES for s in statuses):
+        outcome = "COMPLETED"
+        bad = None
+    else:
+        outcome = "FAILED"
+        bad = next((s for s in statuses if s not in _OK_STATUSES), None)
+    starts = [r.started_at for r in phase_records if r.started_at]
+    stops = [r.finished_at for r in phase_records if r.finished_at]
+    return {
+        "phase": phase,
+        "status": outcome,
+        "records_count": len(phase_records),
+        "start": min(starts) if starts else None,
+        "stop": max(stops) if stops else None,
+        "error_status": bad,
+    }
+
+
+def _check_phase_prereq(
+    phase_outcomes: dict[str, dict[str, Any]],
+    current: str,
+    required: list[str],
+) -> None:
+    """Halt unless every required prior phase is COMPLETED or SKIPPED.
+
+    A phase is considered satisfied if its `status` is COMPLETED or SKIPPED.
+    A phase that ran but FAILED (or has any record with a non-OK status)
+    blocks the current phase. The user can explicitly opt out by passing
+    --skip-phase-<prior> on the CLI.
+    """
+    blockers = []
+    for prior in required:
+        outcome = phase_outcomes.get(prior, {})
+        st = outcome.get("status", "NOT_STARTED")
+        if st not in {"COMPLETED", "SKIPPED"}:
+            blockers.append((prior, st))
+    if blockers:
+        names = ", ".join(f"Phase {p}={s}" for p, s in blockers)
+        flags = " ".join(f"--skip-phase-{p.lower()}" for p, _ in blockers)
+        raise RuntimeError(
+            f"Cannot start Phase {current}: prerequisite phase(s) did not complete: "
+            f"{names}. Re-run with {flags} to acknowledge the missing prior phase(s) "
+            "and bypass the prerequisite check."
+        )
+
+
+# --------------------------------------------------------------------------- #
 # Run record + JSON dump helper
 # --------------------------------------------------------------------------- #
 @dataclass
@@ -288,6 +404,8 @@ def phase_a_gse_fanout(args: argparse.Namespace) -> dict[str, Any]:
         cmd += ["--samples", args.samples]
     if args.modules:
         cmd += ["--modules", args.modules]
+    if getattr(args, "cohort_base", None):
+        cmd += ["--cohort-base", args.cohort_base]
     print("Launching:", " ".join(cmd))
     subprocess.run(cmd, check=True, cwd=str(ROOT))
 
@@ -309,12 +427,84 @@ def phase_a_gse_fanout(args: argparse.Namespace) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 # Phase A.5 : scramble on EC2 (one SSM dispatch per sample)
 # --------------------------------------------------------------------------- #
-def phase_a5_scramble_ec2(args: argparse.Namespace, output_base: str) -> list[StageRecord]:
+def _derive_cohorts_prefix(
+    args: argparse.Namespace,
+    cohort_base_override: str | None = None,
+) -> str:
+    """Resolve the cohort S3 prefix used by run_scramble_ec2.sh as COHORTS_PREFIX.
+
+    Resolution order:
+      1. ``cohort_base_override`` (explicit caller arg) — full S3 URI; we extract the path.
+      2. ``args.cohort_base`` (CLI override) — full S3 URI; same extraction.
+      3. The manifest's ``destination_base`` — full S3 URI; same extraction.
+      4. The legacy default ``cohorts/gatk-sv-validation-2026q2`` (matches
+         run_scramble_ec2.sh's hardcoded default; preserves prior behaviour).
+
+    The returned value is a *path* (no scheme, no bucket), e.g.
+    ``cohorts/gatk-sv-156``, because run_scramble_ec2.sh constructs the
+    full URI by combining COHORTS_BUCKET and COHORTS_PREFIX.
+    """
+    candidate = cohort_base_override or getattr(args, "cohort_base", None)
+    if not candidate:
+        try:
+            manifest = json.loads(Path(args.manifest).read_text())
+            candidate = manifest.get("destination_base")
+        except (OSError, json.JSONDecodeError):
+            candidate = None
+    if not candidate:
+        return "cohorts/gatk-sv-validation-2026q2"
+    # candidate is an s3:// URI; strip the scheme + bucket to leave the prefix.
+    if candidate.startswith("s3://"):
+        without_scheme = candidate[len("s3://"):]
+        # drop the leading bucket segment
+        if "/" in without_scheme:
+            return without_scheme.split("/", 1)[1].rstrip("/")
+        return ""
+    return candidate.lstrip("/").rstrip("/")
+
+
+def _gse_runs_by_sample_module(
+    gse_run_results: dict[str, Any] | None,
+) -> dict[str, dict[str, str]]:
+    """Group Phase A run records by ``(sample, module)``.
+
+    ``gse_run_results`` is the dict returned by ``phase_a_gse_fanout`` —
+    ``{"manifest": <manifest dict>, "run_results": <run_id -> get_run info>}``.
+    Returns ``{sample_id: {module: run_id, ...}, ...}`` so callers can build
+    per-sample COUNTS_S3 / MANTA_S3 paths from the actual cc/manta run IDs.
+    """
+    out: dict[str, dict[str, str]] = {}
+    if not gse_run_results:
+        return out
+    manifest = gse_run_results.get("manifest") or {}
+    for run in manifest.get("runs", []):
+        sid = run.get("sample")
+        mod = run.get("module")
+        rid = run.get("id")
+        if not (sid and mod and rid):
+            continue
+        out.setdefault(sid, {})[mod] = rid
+    return out
+
+
+def phase_a5_scramble_ec2(
+    args: argparse.Namespace,
+    output_base: str,
+    gse_run_results: dict[str, Any] | None = None,
+    cohort_base: str | None = None,
+) -> list[StageRecord]:
     """Run scramble for every sample as direct docker on EC2 via SSM.
 
     HealthOmics terminates 2+ task workflows at 47s, so the upstream multi-task
     Scramble.wdl can't run there. We dispatch scripts/run_scramble_ec2.sh once
     per sample.
+
+    When ``gse_run_results`` is supplied (Phase A produced cc + manta runs in
+    this orchestration), the SSM env block carries explicit per-sample
+    COUNTS_S3 and MANTA_S3 paths derived from the actual run IDs, so
+    run_scramble_ec2.sh does not fall back to its hardcoded prior-rerun
+    defaults. When ``gse_run_results`` is None / empty (skip-gse case), the
+    shell falls back to its own defaults — preserving prior behaviour.
     """
     print("=" * 78)
     print(f"PHASE A.5: scramble on EC2 (SSM)  ({args.cohort_id})")
@@ -334,20 +524,50 @@ def phase_a5_scramble_ec2(args: argparse.Namespace, output_base: str) -> list[St
     s3.put_object(Bucket=OUTPUT_BUCKET, Key=sh_key, Body=sh_local.read_bytes())
     print(f"  uploaded scramble shell to s3://{OUTPUT_BUCKET}/{sh_key}")
 
-    pending: dict[str, dict[str, str]] = {}
+    cohorts_prefix = _derive_cohorts_prefix(args, cohort_base_override=cohort_base)
+    runs_by_sample = _gse_runs_by_sample_module(gse_run_results)
+
+    # Dispatch SERIALLY: send one SSM command, poll it to terminal status,
+    # then send the next. Concurrent dispatch on a single EC2 instance
+    # caused network/disk saturation when 9+ samples raced to download the
+    # 3GB reference FASTA and per-sample CRAMs simultaneously (see
+    # docs/context-transfer-session6.md "scramble parallel dispatch
+    # postmortem"). The make_scramble_vcf step is single-threaded per
+    # sample anyway, so net wall-clock time is roughly equivalent but
+    # reliable.
+    records: list[StageRecord] = []
+    overall_started = time.time()
     for sid in samples:
-        env_lines = " ".join([
+        env_pairs = [
             f"AWS_ACCOUNT_ID={ACCOUNT}",
             f"AWS_DEFAULT_REGION={REGION}",
             f"SAMPLE={sid}",
             f"GATK_SV_COHORT_ID={args.cohort_id}",
             f"OUT_PREFIX=runs/gatk-sv-e2e/{args.cohort_id}/{sid}/scramble-real-ec2",
-        ])
+            f"COHORTS_PREFIX={cohorts_prefix}",
+        ]
+        sample_runs = runs_by_sample.get(sid, {})
+        cc_run_id = sample_runs.get("cc")
+        manta_run_id = sample_runs.get("manta")
+        if cc_run_id:
+            counts_s3 = (
+                f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/{args.cohort_id}/{sid}/"
+                f"gse/cc/{cc_run_id}/out/counts/{sid}.counts.tsv.gz"
+            )
+            env_pairs.append(f"COUNTS_S3={counts_s3}")
+        if manta_run_id:
+            manta_s3 = (
+                f"s3://{OUTPUT_BUCKET}/runs/gatk-sv-e2e/{args.cohort_id}/{sid}/"
+                f"gse/manta/{manta_run_id}/out/manta_vcf/{sid}.manta.vcf.gz"
+            )
+            env_pairs.append(f"MANTA_S3={manta_s3}")
+        env_lines = " ".join(env_pairs)
         commands = [
             f"aws s3 cp s3://{OUTPUT_BUCKET}/{sh_key} /tmp/run_scramble_ec2.sh --region {REGION}",
             "chmod +x /tmp/run_scramble_ec2.sh",
             f"export {env_lines} && bash /tmp/run_scramble_ec2.sh",
         ]
+        started_at = _now_iso()
         resp = ssm.send_command(
             InstanceIds=[EC2_INSTANCE_ID],
             DocumentName="AWS-RunShellScript",
@@ -356,16 +576,13 @@ def phase_a5_scramble_ec2(args: argparse.Namespace, output_base: str) -> list[St
             TimeoutSeconds=21_600,
         )
         cmd_id = resp["Command"]["CommandId"]
-        pending[cmd_id] = {"sample": sid, "started_at": _now_iso()}
         print(f"  [{sid}] SSM command id: {cmd_id}")
 
-    records: list[StageRecord] = []
-    started = time.time()
-    for cmd_id, meta in pending.items():
-        sid = meta["sample"]
-        print(f"\n--- polling scramble-ec2 for {sid} (cmd {cmd_id}) ---")
+        # Poll THIS command to terminal status before dispatching the next.
+        print(f"--- polling scramble-ec2 for {sid} (cmd {cmd_id}) ---")
         inv_started = time.time()
         last = None
+        inv: dict[str, Any] = {}
         while True:
             try:
                 inv = ssm.get_command_invocation(
@@ -382,12 +599,13 @@ def phase_a5_scramble_ec2(args: argparse.Namespace, output_base: str) -> list[St
             if st in {"Success", "Failed", "TimedOut", "Cancelled", "Cancelling"}:
                 break
             time.sleep(POLL_INTERVAL_SEC)
+
         records.append(StageRecord(
             stage=f"scramble_ec2:{sid}",
             kind="ssm",
             id=cmd_id,
             name=f"run_scramble_ec2.sh:{sid}",
-            started_at=meta["started_at"],
+            started_at=started_at,
             finished_at=_now_iso(),
             status=inv["Status"],
             duration_sec=time.time() - inv_started,
@@ -401,7 +619,7 @@ def phase_a5_scramble_ec2(args: argparse.Namespace, output_base: str) -> list[St
             raise RuntimeError(f"scramble-ec2 for sample {sid} ended in status {inv['Status']}")
 
     print(f"\n  All {sample_count} scramble-ec2 SSM commands Succeeded "
-          f"(total elapsed {int(time.time() - started)}s)")
+          f"(total elapsed {int(time.time() - overall_started)}s)")
     return records
 
 
@@ -622,6 +840,16 @@ def _start_cohort_module(
         params = dict(template.get("parameters", {}))
         # Original validation cohort id used in the template run; the orchestrator
         # rewrites these to point at the rerun's outputs.
+        # Two-step substitution: the template's S3 URIs embed either the long
+        # rerun string ("gatk-sv-validation-2026q2-rerun-2026-05-25") OR the
+        # short cohort string ("gatk-sv-validation-2026q2"). Substitute the
+        # longer string first so both forms collapse to the new cohort_id;
+        # otherwise URIs like `.../gatk-sv-validation-2026q2-rerun-2026-05-25/...`
+        # would only have their short prefix replaced and the resulting path
+        # `<cohort_id>-rerun-2026-05-25/...` would not exist.
+        params = _swap_uris(
+            params, "gatk-sv-validation-2026q2-rerun-2026-05-25", cohort_id
+        )
         params = _swap_uris(params, "gatk-sv-validation-2026q2", cohort_id)
     else:
         # Phase 8 (Req 19) modules don't have a template-run reference yet;
@@ -674,13 +902,36 @@ def phase_b_cohort_modules(args: argparse.Namespace, output_base: str) -> list[S
     # Activate RegenotypeCNVs only on cohorts >= 100 samples (Req 19.6).
     # On smaller cohorts the module finds no eligible variants
     # (regeno_max_allele_freq=0.01) and the WDL doesn't handle empty output.
+    records: list[StageRecord] = []
     if sample_count >= 100:
         sequence.append("regenotype_cnvs")
     else:
-        print(f"  [SKIP] RegenotypeCNVs — sample_count={sample_count} < 100 "
-              "(Req 19.6: skip on small cohorts)")
-
-    records: list[StageRecord] = []
+        skip_msg = (
+            f"sample_count={sample_count} < 100; RegenotypeCNVs is only "
+            "activated for cohorts of 100+ samples per Req 19.6 "
+            "(regeno_max_allele_freq=0.01 yields no eligible variants on "
+            "small cohorts and the WDL does not handle empty output)."
+        )
+        print(f"  [SKIP] RegenotypeCNVs — {skip_msg}")
+        # Record the skip in the run report so the cost-report JSON
+        # carries an auditable rationale for cohorts below the threshold.
+        now = _now_iso()
+        records.append(StageRecord(
+            stage="regenotype_cnvs",
+            kind="healthomics",
+            id="(skipped: cohort < 100 samples)",
+            name="RegenotypeCNVs",
+            started_at=now,
+            finished_at=now,
+            status="SKIPPED",
+            duration_sec=0.0,
+            extra={
+                "skip_reason": skip_msg,
+                "requirement": "Req 19.6",
+                "sample_count": sample_count,
+                "threshold": 100,
+            },
+        ))
     for module_key in sequence:
         print(f"\n--- {module_key} ---")
         skipped = _maybe_skip_phase(module_key, module_key)
@@ -944,6 +1195,9 @@ def phase_e_cost_report(
         "sample_count": args.sample_count,
         "region": REGION,
         "generated_at": _now_iso(),
+        "phase_summary": [
+            _summarize_phase(records, p) for p in ("A", "B", "C", "D")
+        ],
         "stages": annotated_stages,
         "totals": {
             "healthomics_compute_cost_usd": round(cohort_compute, 4),
@@ -970,27 +1224,72 @@ def phase_e_cost_report(
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
-def main() -> int:
+def _build_parser() -> argparse.ArgumentParser:
+    """Construct the argparse parser. Factored out so unit tests can introspect
+    the flag set without invoking main()."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--cohort-id", required=True, help="Stable id used for cost tagging")
     ap.add_argument("--manifest", default=str(ROOT / "validation-cohort" / "inputs" / "manifest.json"))
     ap.add_argument("--samples", default=None, help="Override sample list (comma-separated)")
     ap.add_argument("--modules", default=None, help="GSE sub-tools (default all 5)")
-    ap.add_argument("--skip-gse", action="store_true", help="Skip Phase A (GSE outputs already exist)")
-    ap.add_argument("--skip-scramble-ec2", action="store_true",
-                    help="Skip Phase A.5 (scramble on EC2). Use only if scramble outputs "
-                         "already exist for every sample under <output_base>/<sample>/scramble-real-ec2/.")
-    ap.add_argument("--skip-evidence-qc", action="store_true",
-                    help="Skip Phase A.6 (EvidenceQC).")
-    ap.add_argument("--skip-cohort", action="store_true", help="Skip Phase B (cohort modules)")
-    ap.add_argument("--skip-makecohortvcf", action="store_true", help="Skip Phase C (EC2 hybrid)")
-    ap.add_argument("--skip-post-processing", action="store_true",
-                    help="Skip Phase C.1-C.5 (RefineComplexVariants + GQ_Recalibrator chain).")
-    ap.add_argument("--skip-annotate", action="store_true", help="Skip Phase D (AnnotateVcf)")
-    ap.add_argument("--skip-main-vcf-qc", action="store_true",
-                    help="Skip Phase D.2 (MainVcfQC cohort-level QC plots).")
-    ap.add_argument("--include-visualize-cnvs", action="store_true",
-                    help="Run Phase D.3 (VisualizeCnvs per-CNV PNGs). Default off.")
+    ap.add_argument(
+        "--cohort-base",
+        default=None,
+        help="S3 base URI for the staged CRAM/CRAI cohort "
+             "(e.g. s3://omics-cohorts-ap-southeast-1-<account>/cohorts/gatk-sv-156). "
+             "When omitted, derived from the manifest's `destination_base` field.",
+    )
+
+    # Module_Phase boundary skip flags (Req 19.1–19.6, Req 14.1–14.2).
+    # Each flag bypasses an entire upstream Module_Phase boundary AND
+    # acknowledges that the prerequisite check for the next phase should
+    # not block on its records.
+    phase_group = ap.add_argument_group(
+        "Module_Phase boundaries (Req 19.1–19.6)",
+        "Skip an entire phase. Phase A blocks Phase B blocks Phase C "
+        "blocks Phase D unless the corresponding --skip-phase-* flag is set.",
+    )
+    phase_group.add_argument("--skip-phase-a", action="store_true",
+                             help="Skip Phase A (per-sample: GSE, scramble-EC2, EvidenceQC).")
+    phase_group.add_argument("--skip-phase-b", action="store_true",
+                             help="Skip Phase B (cohort modules: GBE → GenotypeBatch).")
+    phase_group.add_argument("--skip-phase-c", action="store_true",
+                             help="Skip Phase C (post-processing: MakeCohortVcf hybrid + "
+                                  "RefineComplexVariants + GQ_Recalibrator chain).")
+    phase_group.add_argument("--skip-phase-d", action="store_true",
+                             help="Skip Phase D (delivery: AnnotateVcf, MainVcfQC, VisualizeCnvs).")
+
+    # Fine-grained sub-phase flags (kept for backward compatibility and for
+    # operators who need to skip a single sub-step inside a phase).
+    sub_group = ap.add_argument_group(
+        "Fine-grained sub-phase skips (legacy)",
+        "These flags skip an individual sub-step within a phase. "
+        "Prefer --skip-phase-{a,b,c,d} for whole-phase skips.",
+    )
+    sub_group.add_argument("--skip-gse", action="store_true",
+                           help="Skip Phase A.1 (GSE outputs already exist).")
+    sub_group.add_argument("--skip-scramble-ec2", action="store_true",
+                           help="Skip Phase A.5 (scramble on EC2). Use only if scramble outputs "
+                                "already exist for every sample under <output_base>/<sample>/scramble-real-ec2/.")
+    sub_group.add_argument("--skip-evidence-qc", action="store_true",
+                           help="Skip Phase A.6 (EvidenceQC).")
+    sub_group.add_argument("--skip-cohort", action="store_true",
+                           help="Skip Phase B (cohort modules). [Equivalent to --skip-phase-b.]")
+    sub_group.add_argument("--skip-makecohortvcf", action="store_true",
+                           help="Skip Phase C MakeCohortVcf hybrid (EC2).")
+    sub_group.add_argument("--skip-post-processing", action="store_true",
+                           help="Skip Phase C.1-C.5 (RefineComplexVariants + GQ_Recalibrator chain).")
+    sub_group.add_argument("--skip-annotate", action="store_true",
+                           help="Skip Phase D.1 (AnnotateVcf).")
+    sub_group.add_argument("--skip-main-vcf-qc", action="store_true",
+                           help="Skip Phase D.2 (MainVcfQC cohort-level QC plots).")
+    sub_group.add_argument("--include-visualize-cnvs", action="store_true",
+                           help="Run Phase D.3 (VisualizeCnvs per-CNV PNGs). Default off.")
+    return ap
+
+
+def main() -> int:
+    ap = _build_parser()
     args = ap.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text())
@@ -1010,47 +1309,114 @@ def main() -> int:
     all_records: list[StageRecord] = []
     pipeline_started = time.time()
 
-    if not args.skip_gse:
-        gse = phase_a_gse_fanout(args)
-        for run in gse["manifest"]["runs"]:
-            info = gse["run_results"].get(run["id"], {})
-            all_records.append(StageRecord(
-                stage=f"GSE:{run['module']}:{run['sample']}",
-                kind="healthomics",
-                id=run["id"],
-                name=run["name"],
-                started_at="(see manifest)",
-                finished_at=_now_iso(),
-                status=info.get("status"),
-                duration_sec=_wall_clock(info),
-            ))
+    # phase_outcomes tracks the rolled-up status for each Module_Phase
+    # boundary so subsequent phases can enforce the A→B→C→D prereq chain.
+    phase_outcomes: dict[str, dict[str, Any]] = {}
 
-    if not args.skip_scramble_ec2:
-        all_records.extend(phase_a5_scramble_ec2(args, output_base))
+    # ------------------------------------------------------------------ #
+    # Phase A : per-sample (GSE fan-out, scramble-EC2, EvidenceQC)
+    # ------------------------------------------------------------------ #
+    if args.skip_phase_a:
+        print("[SKIP] Phase A (per-sample) — --skip-phase-a")
+        phase_outcomes["A"] = {"status": "SKIPPED",
+                               "reason": "--skip-phase-a"}
+    else:
+        phase_a_records: list[StageRecord] = []
+        gse_run_results: dict[str, Any] | None = None
+        try:
+            if not args.skip_gse:
+                gse = phase_a_gse_fanout(args)
+                gse_run_results = gse
+                for run in gse["manifest"]["runs"]:
+                    info = gse["run_results"].get(run["id"], {})
+                    phase_a_records.append(StageRecord(
+                        stage=f"GSE:{run['module']}:{run['sample']}",
+                        kind="healthomics",
+                        id=run["id"],
+                        name=run["name"],
+                        started_at="(see manifest)",
+                        finished_at=_now_iso(),
+                        status=info.get("status"),
+                        duration_sec=_wall_clock(info),
+                    ))
+            if not args.skip_scramble_ec2:
+                phase_a_records.extend(
+                    phase_a5_scramble_ec2(
+                        args,
+                        output_base,
+                        gse_run_results=gse_run_results,
+                        cohort_base=args.cohort_base,
+                    )
+                )
+            if not args.skip_evidence_qc:
+                phase_a_records.append(phase_a6_evidence_qc(args, output_base))
+        finally:
+            all_records.extend(phase_a_records)
+            phase_outcomes["A"] = _summarize_phase(phase_a_records, "A")
 
-    if not args.skip_evidence_qc:
-        all_records.append(phase_a6_evidence_qc(args, output_base))
+    # ------------------------------------------------------------------ #
+    # Phase B : cohort modules
+    # ------------------------------------------------------------------ #
+    if args.skip_phase_b or args.skip_cohort:
+        reason = "--skip-phase-b" if args.skip_phase_b else "--skip-cohort"
+        print(f"[SKIP] Phase B (cohort) — {reason}")
+        phase_outcomes["B"] = {"status": "SKIPPED", "reason": reason}
+    else:
+        _check_phase_prereq(phase_outcomes, current="B", required=["A"])
+        phase_b_records: list[StageRecord] = []
+        try:
+            phase_b_records.extend(phase_b_cohort_modules(args, output_base))
+        finally:
+            all_records.extend(phase_b_records)
+            phase_outcomes["B"] = _summarize_phase(phase_b_records, "B")
 
-    if not args.skip_cohort:
-        all_records.extend(phase_b_cohort_modules(args, output_base))
+    # ------------------------------------------------------------------ #
+    # Phase C : post-processing (MakeCohortVcf hybrid + Refine + GQ chain)
+    # ------------------------------------------------------------------ #
+    if args.skip_phase_c:
+        print("[SKIP] Phase C (post-processing) — --skip-phase-c")
+        phase_outcomes["C"] = {"status": "SKIPPED",
+                               "reason": "--skip-phase-c"}
+    else:
+        _check_phase_prereq(phase_outcomes, current="C", required=["B"])
+        phase_c_records: list[StageRecord] = []
+        try:
+            if not args.skip_makecohortvcf:
+                phase_c_records.extend(phase_c_makecohortvcf_hybrid(args, output_base))
+            if not args.skip_post_processing:
+                phase_c_records.extend(phase_c_post_processing(args, output_base))
+        finally:
+            all_records.extend(phase_c_records)
+            phase_outcomes["C"] = _summarize_phase(phase_c_records, "C")
 
-    if not args.skip_makecohortvcf:
-        all_records.extend(phase_c_makecohortvcf_hybrid(args, output_base))
-
-    if not args.skip_post_processing:
-        all_records.extend(phase_c_post_processing(args, output_base))
-
-    if not args.skip_annotate:
-        all_records.append(phase_d_annotate_vcf(args, output_base))
-
-    if not args.skip_main_vcf_qc:
-        all_records.append(phase_d2_main_vcf_qc(args, output_base))
-
-    if args.include_visualize_cnvs:
-        all_records.append(phase_d3_visualize_cnvs(args, output_base))
+    # ------------------------------------------------------------------ #
+    # Phase D : delivery (AnnotateVcf, MainVcfQC, optional VisualizeCnvs)
+    # ------------------------------------------------------------------ #
+    if args.skip_phase_d:
+        print("[SKIP] Phase D (delivery) — --skip-phase-d")
+        phase_outcomes["D"] = {"status": "SKIPPED",
+                               "reason": "--skip-phase-d"}
+    else:
+        _check_phase_prereq(phase_outcomes, current="D", required=["C"])
+        phase_d_records: list[StageRecord] = []
+        try:
+            if not args.skip_annotate:
+                phase_d_records.append(phase_d_annotate_vcf(args, output_base))
+            if not args.skip_main_vcf_qc:
+                phase_d_records.append(phase_d2_main_vcf_qc(args, output_base))
+            if args.include_visualize_cnvs:
+                phase_d_records.append(phase_d3_visualize_cnvs(args, output_base))
+        finally:
+            all_records.extend(phase_d_records)
+            phase_outcomes["D"] = _summarize_phase(phase_d_records, "D")
 
     print()
     print(f"=== Pipeline elapsed: {int(time.time() - pipeline_started)}s ===")
+    print("=== Module_Phase summary ===")
+    for p in ("A", "B", "C", "D"):
+        s = phase_outcomes.get(p, {"status": "NOT_STARTED"})
+        print(f"  Phase {p}: {s.get('status'):<11s} "
+              f"records={s.get('records_count', 0)}")
     phase_e_cost_report(args, output_base, all_records)
     return 0
 

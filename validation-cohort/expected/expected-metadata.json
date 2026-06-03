@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": {
+    "expected_vcf": "validation-cohort/expected/expected.vcf.gz",
+    "expected_vcf_index": "validation-cohort/expected/expected.vcf.gz.tbi",
+    "format": "VCF v4.2, bgzip-compressed, tabix-indexed",
+    "purpose": "Reference Cohort_VCF for the validation harness's strict and fuzzy concordance checks (compare_cohort_vcf, compare_cohort_vcf_fuzzy) — see Req 13.1, 13.2 and Design §Components.j."
+  },
+  "post_gq_artifact": {
+    "expected_post_gq_vcf_s3": "s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/gatk-sv-validation-2026q2.post-gq.cleaned.vcf.gz",
+    "expected_post_gq_vcf_index_s3": "s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/gatk-sv-validation-2026q2.post-gq.cleaned.vcf.gz.tbi",
+    "format": "VCF v4.2, bgzip-compressed, tabix-indexed",
+    "stage": "post-FilterGenotypes (pre-AnnotateVcf) — output of the GQ_Recalibrator chain JoinRawCalls -> SVConcordance -> ScoreGenotypes -> FilterGenotypes (Definition: GQ_Recalibrator).",
+    "purpose": "Reference Cohort_VCF for the GQ_Recalibrator concordance gate added in Req 19.8. Compared against the produced post-FilterGenotypes Cohort_VCF using the same per-SV-type thresholds declared in Req 13.3 (DEL/DUP >= 99%, INS/INV >= 95%).",
+    "consumed_by_manifests": [
+      "validation-cohort/inputs/manifest.json (key: expected_post_gq_vcf)",
+      "validation-cohort/inputs/manifest-gatk-sv-156.json (key: expected_post_gq_vcf)"
+    ],
+    "relationship_to_expected_vcf": "Distinct artifact. expected.vcf.gz is the post-AnnotateVcf Cohort_VCF used by the original concordance gate (Req 13.1, 13.2). expected_post_gq_vcf is the upstream sibling at the post-FilterGenotypes stage; both live alongside in s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/ and cover different stages of the pipeline.",
+    "status": "PENDING_FIRST_VALIDATION_RUN",
+    "status_notes": [
+      "Not yet produced. The validation harness skips the post-GQ concordance gate while expected_post_gq_vcf_sha256 is null in the consuming manifest.",
+      "Will be produced on the first end-to-end run that exercises the GQ_Recalibrator chain (Phase 8 of tasks.md), then uploaded to s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/ alongside the existing expected.vcf.gz."
+    ],
+    "artifact_checksums": {
+      "expected_post_gq_vcf_sha256": null,
+      "expected_post_gq_vcf_size_bytes": null,
+      "expected_post_gq_vcf_index_sha256": null,
+      "expected_post_gq_vcf_index_size_bytes": null,
+      "computed_at": null,
+      "computed_by": null
+    },
+    "regeneration_triggers": [
+      "Any caller container in `callers.container_versions` is upgraded.",
+      "Any reference file in reference-bundle/manifests/GRCh38.json is upgraded.",
+      "The upstream commit pinned in `upstream_pipeline.broad_reference_vcf_commit` is bumped.",
+      "A divergence is added to or removed from any module bundle on the GQ_Recalibrator path (JoinRawCalls, SVConcordance, ScoreGenotypes, FilterGenotypes) — see docs/divergence-log.md.",
+      "Cohort membership in `cohort.samples` changes."
+    ]
+  },
+  "status": "PENDING_FIRST_VALIDATION_RUN",
+  "status_notes": [
+    "The binary expected.vcf.gz and .tbi are intentionally gitignored by validation-cohort/.gitignore.",
+    "They are produced once on Terra/Cromwell-on-GCP per docs/validation-runbook.md Step 1, uploaded to s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/, and downloaded to this directory before running the acceptance test.",
+    "The acceptance test tests/gatk_sv_healthomics/acceptance/test_validation_concordance.py becomes runnable once expected.vcf.gz is present locally.",
+    "When a real expected.vcf.gz is downloaded, regenerate this file's `artifact_checksums` block (see `regeneration_procedure` below) so the Migration_System can detect tampering."
+  ],
+  "artifact_checksums": {
+    "expected_vcf_sha256": null,
+    "expected_vcf_size_bytes": null,
+    "expected_vcf_index_sha256": null,
+    "expected_vcf_index_size_bytes": null,
+    "computed_at": null,
+    "computed_by": null
+  },
+  "cohort": {
+    "cohort_id": "gatk-sv-validation-2026q2",
+    "reference_build": "GRCh38",
+    "sample_count": 10,
+    "samples": [
+      "NA12878",
+      "HG00096",
+      "HG00097",
+      "HG00099",
+      "HG00100",
+      "HG00101",
+      "HG00102",
+      "NA19238",
+      "NA19239",
+      "HG00513"
+    ],
+    "manifest": "validation-cohort/inputs/manifest.json",
+    "ped": "validation-cohort/inputs/cohort.ped"
+  },
+  "upstream_pipeline": {
+    "repo": "broadinstitute/gatk-sv",
+    "broad_reference_vcf_commit": "672d855",
+    "broad_reference_vcf_commit_notes": [
+      "This is the commit Broad's upstream WDL was run at on Terra/Cromwell-on-GCP to produce expected.vcf.gz.",
+      "It matches the GATK image tag baked into the HealthOmics container registry map (gatk:mw-gatk-sv-672d85), so HealthOmics output and Broad output use the same GATK build.",
+      "Source: docs/validation-runbook.md Step 1."
+    ],
+    "healthomics_10module_migration_commit": "7eb2af1feea9",
+    "healthomics_10module_migration_commit_notes": [
+      "Pinned in scripts/migrate_module.py and scripts/deploy.py.",
+      "Covers GatherSampleEvidence -> AnnotateVcf (Phase 1-7 of tasks.md)."
+    ],
+    "healthomics_phase8_amendment_commit": "a1be457",
+    "healthomics_phase8_amendment_commit_notes": [
+      "v1.1 release tag commit; pinned in scripts/bootstrap/08_register_workflows.py.",
+      "Adds EvidenceQC, RefineComplexVariants, JoinRawCalls, SVConcordance, ScoreGenotypes, FilterGenotypes, MainVcfQC, VisualizeCnvs (Phase 8 of tasks.md, currently in-flight at the time of this metadata snapshot).",
+      "Phase 8 modules are *not* in the path that produced the v1.0 expected.vcf.gz; they will require a fresh expected when first activated end-to-end."
+    ]
+  },
+  "callers": {
+    "set": ["Manta", "Wham", "Scramble", "GATK-gCNV"],
+    "melt_excluded": true,
+    "melt_exclusion_rationale": "Req 23.3 — MELT is GPL-licensed and incompatible with the redistribution model. Mobile-element-insertion sensitivity is reduced; tradeoff accepted per Req 23.5.",
+    "container_versions": {
+      "manta": "us.gcr.io/broad-dsde-methods/gatk-sv/manta:2023-09-14-v0.28.3-beta-3f22f94d",
+      "wham": "us.gcr.io/broad-dsde-methods/gatk-sv/wham:2024-10-25-v0.29-beta-5ea22a52",
+      "scramble": "us.gcr.io/broad-dsde-methods/gatk-sv/scramble:2024-10-25-v0.29-beta-5ea22a52",
+      "gatk_gcnv": "us.gcr.io/broad-dsde-methods/gatk-sv/gatk:mw-gatk-sv-672d85",
+      "cnmops": "us.gcr.io/broad-dsde-methods/gatk-sv/cnmops:2025-09-02-v1.0.5-f091af0b",
+      "sv_base_mini": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-base-mini:2024-10-25-v0.29-beta-5ea22a52",
+      "sv_base": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-base:2024-10-25-v0.29-beta-5ea22a52",
+      "sv_pipeline": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604",
+      "sv_utils": "us.gcr.io/broad-dsde-methods/gatk-sv/sv-utils:2025-01-06-v1.0.1-e902bf4e",
+      "samtools_cloud": "us.gcr.io/broad-dsde-methods/gatk-sv/samtools-cloud:2024-10-25-v0.29-beta-5ea22a52",
+      "stripy": "us.gcr.io/broad-dsde-methods/gatk-sv/stripy:2025-11-14-v1.1-7b56c3ac",
+      "genomes_in_the_cloud": "us.gcr.io/broad-gotc-prod/genomes-in-the-cloud:2.3.2-1510681135",
+      "ubuntu": "ubuntu:18.04"
+    },
+    "container_registry_map": "container-registry-map/container-registry-map.json"
+  },
+  "healthomics_workflow_versions": {
+    "region": "ap-southeast-1",
+    "source": "workflow-ids.json (gitignored: contains real account-scoped IDs)",
+    "modules": {
+      "GatherSampleEvidence": {"workflow_id": "9810559", "name": "gatk-sv-GatherSampleEvidence"},
+      "GatherBatchEvidence": {"workflow_id": "5330541", "name": "gatk-sv-GatherBatchEvidence"},
+      "ClusterBatch": {"workflow_id": "9372400", "name": "gatk-sv-ClusterBatch"},
+      "GenerateBatchMetrics": {"workflow_id": "5971186", "name": "gatk-sv-GenerateBatchMetrics"},
+      "FilterBatch": {"workflow_id": "9359316", "name": "gatk-sv-FilterBatch"},
+      "MergeBatchSites": {"workflow_id": "1875522", "name": "gatk-sv-MergeBatchSites"},
+      "GenotypeBatch": {"workflow_id": "6970080", "name": "gatk-sv-GenotypeBatch"},
+      "RegenotypeCNVs": {"workflow_id": "7717836", "name": "gatk-sv-RegenotypeCNVs"},
+      "MakeCohortVcf": {"workflow_id": "1672363", "name": "gatk-sv-MakeCohortVcf"},
+      "AnnotateVcf": {"workflow_id": "3376877", "name": "gatk-sv-AnnotateVcf"},
+      "EvidenceQC": {"workflow_id": "7602667", "name": "gatk-sv-EvidenceQC"},
+      "RefineComplexVariants": {"workflow_id": "1193786", "name": "gatk-sv-RefineComplexVariants"},
+      "JoinRawCalls": {"workflow_id": "7070385", "name": "gatk-sv-JoinRawCalls"},
+      "SVConcordance": {"workflow_id": "9326242", "name": "gatk-sv-SVConcordance"},
+      "ScoreGenotypes": {"workflow_id": "7937274", "name": "gatk-sv-ScoreGenotypes"},
+      "FilterGenotypes": {"workflow_id": "7423387", "name": "gatk-sv-FilterGenotypes"},
+      "MainVcfQC": {"workflow_id": "1551065", "name": "gatk-sv-MainVcfQC"},
+      "VisualizeCnvs": {"workflow_id": "6700657", "name": "gatk-sv-VisualizeCnvs"}
+    },
+    "version_naming_scheme": "Semver tags applied at registration time by gatk_sv_healthomics.registrar.register_module; current versions are tracked in workflow-versions.json and emitted with the cost-tag `gatk-sv:workflow-version=V` (see Property 10).",
+    "notes": [
+      "These workflow IDs are the targets of the validation cohort run that produces the *next* expected.vcf.gz. They are NOT necessarily the workflow IDs that produced the current expected.vcf.gz, since expected.vcf.gz is generated on Terra/Cromwell-on-GCP, not on HealthOmics (see Req 13.1 and docs/validation-runbook.md Step 1).",
+      "When the expected.vcf.gz is regenerated from a HealthOmics run instead of Terra, populate `produced_by_run` below with the HealthOmics run IDs that produced it."
+    ]
+  },
+  "produced_by_run": {
+    "engine": "Terra/Cromwell-on-GCP (upstream Broad pipeline)",
+    "engine_notes": "Per Req 13.1 the expected.vcf.gz is produced by Broad's upstream WDL on Terra so the HealthOmics output can be compared to a known-good ground truth. See docs/validation-runbook.md Step 1.",
+    "terra_workspace": null,
+    "terra_submission_id": null,
+    "healthomics_run_ids": null,
+    "produced_at_utc": null,
+    "produced_by_operator": null
+  },
+  "regeneration_procedure": {
+    "trigger_conditions": [
+      "Any caller container in `callers.container_versions` is upgraded.",
+      "Any reference file in reference-bundle/manifests/GRCh38.json is upgraded.",
+      "The upstream commit pinned in `upstream_pipeline.broad_reference_vcf_commit` is bumped.",
+      "A divergence is added to or removed from any module bundle (see docs/divergence-log.md).",
+      "Cohort membership in `cohort.samples` changes."
+    ],
+    "procedure": [
+      "1. Re-run Broad's upstream WDL on Terra at the new upstream commit on the same 10-sample cohort. See docs/validation-runbook.md Step 1.",
+      "2. Upload the resulting <cohort>.cleaned.vcf.gz and .tbi to s3://omics-ref-ap-southeast-1-__ACCOUNT_ID__/gatk-sv/validation/broad-reference/.",
+      "3. `aws s3 cp` both files into validation-cohort/expected/.",
+      "4. Compute SHA-256 and byte size for each:",
+      "     sha256sum validation-cohort/expected/expected.vcf.gz",
+      "     sha256sum validation-cohort/expected/expected.vcf.gz.tbi",
+      "5. Update the `artifact_checksums` block of this file with the new digests, sizes, ISO-8601 `computed_at`, and `computed_by` operator name.",
+      "6. Update `upstream_pipeline.broad_reference_vcf_commit` and `produced_by_run.{produced_at_utc, produced_by_operator}` to match.",
+      "7. Re-run `tests/gatk_sv_healthomics/acceptance/test_validation_concordance.py` and confirm DEL/DUP >= 99% and INS/INV >= 95% concordance against the new expected.",
+      "8. Commit this file (the binary VCF is gitignored — do NOT commit it)."
+    ],
+    "freshness_requirement": "Req 13.2 — the validation harness compares produced against expected; this metadata records what `expected` represents, so it MUST be updated whenever any input above changes."
+  },
+  "links": {
+    "requirements": ".kiro/specs/gatk-sv-healthomics-migration/requirements.md (Req 13.1, 13.2, 19.8)",
+    "design": ".kiro/specs/gatk-sv-healthomics-migration/design.md (§Components.j Validation Harness)",
+    "validation_runbook": "docs/validation-runbook.md",
+    "concordance_test": "kiro-life-sciences/tests/gatk_sv_healthomics/acceptance/test_validation_concordance.py",
+    "compare_cohort_vcf_impl": "kiro-life-sciences/src/kiro_life_sciences/gatk_sv_healthomics/validation/",
+    "container_registry_map": "container-registry-map/container-registry-map.json",
+    "reference_bundle_manifest": "reference-bundle/manifests/GRCh38.json",
+    "post_gq_manifest_field_validation_2026q2": "validation-cohort/inputs/manifest.json#expected_post_gq_vcf",
+    "post_gq_manifest_field_gatk_sv_156": "validation-cohort/inputs/manifest-gatk-sv-156.json#expected_post_gq_vcf"
+  }
+}

@@ -38,6 +38,12 @@ def test_per_sample_cost_at_or_below_target() -> None:
         pytest.skip(f"no cost-report.json in {latest}.")
 
     report = json.loads(cost_report_path.read_text())
+    if report.get("status") == "SCAFFOLD":
+        pytest.skip(
+            f"{cost_report_path} is a SCAFFOLD report (no real cohort has "
+            f"run yet); the real PASSED gate fires when Task 8.10 commits a "
+            f"report with status='REAL'."
+        )
     per_sample = float(report["per_sample_cost_usd"])
     target = float(report.get("target_usd", 7.00))
     assert per_sample <= target, (

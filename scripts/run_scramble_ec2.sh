@@ -32,6 +32,16 @@ WORK=/tmp/scramble-ec2/${SAMPLE}
 mkdir -p $WORK/{refs,inputs,clusters,outputs,logs}
 cd $WORK
 
+# Idempotency: remove any stale per-sample scramble outputs from a prior
+# (failed) run before we (re)compute them. We intentionally *do not* skip
+# when outputs are present -- a re-run must always recompute and overwrite.
+rm -f $WORK/outputs/${SAMPLE}.scramble.tsv \
+      $WORK/outputs/${SAMPLE}.scramble.tsv.gz \
+      $WORK/outputs/${SAMPLE}.scramble.vcf.gz \
+      $WORK/outputs/${SAMPLE}.scramble.vcf.gz.tbi \
+      $WORK/outputs/${SAMPLE}.scramble_clusters.tsv.gz \
+      $WORK/outputs/unsorted.vcf.gz
+
 # Tag this EC2 instance for cost tracking
 INSTANCE_ID="$(curl -fs http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || echo '')"
 if [ -n "$INSTANCE_ID" ]; then
@@ -54,7 +64,7 @@ echo "=== Stage 1: download inputs + refs ==="
 cd $WORK/refs
 for f in Homo_sapiens_assembly38.fasta Homo_sapiens_assembly38.fasta.fai \
          gs_primary_contigs.list mei_bed; do
-    [ -f "$f" ] || aws s3 cp "s3://${REF_BUCKET}/${REF_PREFIX}/${f}" . --quiet
+    [ -f "$f" ] || aws s3 cp "s3://${REF_BUCKET}/${REF_PREFIX}/${f}" .
 done
 
 # mei_bed in the reference bucket is BGZF-compressed; make_scramble_vcf.py
@@ -66,10 +76,10 @@ if file $WORK/refs/mei_bed | grep -q -E "(gzip|BGZF)"; then
 fi
 
 cd $WORK/inputs
-[ -f ${SAMPLE}.cram ]      || aws s3 cp "s3://${COHORTS_BUCKET}/${COHORTS_PREFIX}/${SAMPLE}.final.cram" "${SAMPLE}.cram" --quiet
-[ -f ${SAMPLE}.cram.crai ] || aws s3 cp "s3://${COHORTS_BUCKET}/${COHORTS_PREFIX}/${SAMPLE}.final.cram.crai" "${SAMPLE}.cram.crai" --quiet
-[ -f ${SAMPLE}.counts.tsv.gz ] || aws s3 cp "$COUNTS_S3" "${SAMPLE}.counts.tsv.gz" --quiet
-[ -f ${SAMPLE}.manta.vcf.gz ]  || aws s3 cp "$MANTA_S3"  "${SAMPLE}.manta.vcf.gz" --quiet
+[ -f ${SAMPLE}.cram ]      || aws s3 cp "s3://${COHORTS_BUCKET}/${COHORTS_PREFIX}/${SAMPLE}.final.cram" "${SAMPLE}.cram"
+[ -f ${SAMPLE}.cram.crai ] || aws s3 cp "s3://${COHORTS_BUCKET}/${COHORTS_PREFIX}/${SAMPLE}.final.cram.crai" "${SAMPLE}.cram.crai"
+[ -f ${SAMPLE}.counts.tsv.gz ] || aws s3 cp "$COUNTS_S3" "${SAMPLE}.counts.tsv.gz"
+[ -f ${SAMPLE}.manta.vcf.gz ]  || aws s3 cp "$MANTA_S3"  "${SAMPLE}.manta.vcf.gz"
 
 echo "=== Stage 2: cluster_identifier + SCRAMble.R (scramble docker) ==="
 docker run --rm \
@@ -138,7 +148,7 @@ docker run --rm \
             -n $MIN_CLIPPED_READS \
             --mei-score 90
         mv ${clusterFile}_MEIs.txt /outputs/${SAMPLE}.scramble.tsv
-        gzip /outputs/${SAMPLE}.scramble.tsv
+        gzip -f /outputs/${SAMPLE}.scramble.tsv
 
         # Save clusters too for traceability
         cp ${SAMPLE}.scramble_clusters.tsv.gz /outputs/
@@ -193,5 +203,13 @@ do
         ]" || echo "WARN: failed to tag $OBJ"
 done
 
+echo "=== Cleanup: removing workdir $WORK ==="
+cd /
+rm -rf "$WORK"
+echo "  workdir removed; disk now:"
+df -h /
+
 echo "=== DONE ==="
 echo "Output: s3://${OUT_BUCKET}/${OUT_PREFIX}/${SAMPLE}.scramble.vcf.gz"
+
+

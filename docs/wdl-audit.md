@@ -188,19 +188,32 @@ genotypes. The amendment ports these 8 from upstream `gatk-sv@v1.1`
 
 ### Phase 8 modules — packaging (this audit)
 
-| Module | Phase | Source | Bundle | Lint | Notes |
+All 8 modules were ported from upstream commit `broadinstitute/gatk-sv@a1be457`
+(v1.1 release tag) by `scripts/migrate_v1_modules.py`. The packager copied the
+listed `wdl/*.wdl` entry point plus its transitively-imported sub-WDLs into
+`wdl/bundles/<Module>/<Module>-bundle.zip`, then applied the standard policy
+divergences (MELT excision, `gs://` URI rejection). Every bundle ships with a
+machine-readable `wdl/bundles/<Module>/divergence.json` capturing the
+upstream commit, the file list, and the divergences applied.
+
+| Module | Phase | Upstream WDL @ `a1be457` | Bundle | Lint | Validation |
 |---|---|---|---|---|---|
-| EvidenceQC            | A.6 | `wdl/EvidenceQC.wdl`        | `wdl/bundles/EvidenceQC/` | ✅ clean | Per-sample QC, gates Phase B |
-| RefineComplexVariants | C.1 | `wdl/RefineComplexVariants.wdl` | `wdl/bundles/RefineComplexVariants/` | ✅ clean | Post-CleanVcf complex SV refinement |
-| JoinRawCalls          | C.2 | `wdl/JoinRawCalls.wdl`     | `wdl/bundles/JoinRawCalls/` | ✅ clean | GQ_Recalibrator step 1/4 |
-| SVConcordance         | C.3 | `wdl/SVConcordance.wdl`    | `wdl/bundles/SVConcordance/` | ✅ clean | GQ_Recalibrator step 2/4 |
-| ScoreGenotypes        | C.4 | `wdl/ScoreGenotypes.wdl`   | `wdl/bundles/ScoreGenotypes/` | ✅ clean | GQ_Recalibrator step 3/4 |
-| FilterGenotypes       | C.5 | `wdl/FilterGenotypes.wdl`  | `wdl/bundles/FilterGenotypes/` | ✅ clean | GQ_Recalibrator step 4/4 |
-| MainVcfQC             | D.2 | `wdl/MainVcfQc.wdl`        | `wdl/bundles/MainVcfQC/` | ✅ clean | Cohort-level QC plots |
-| VisualizeCnvs         | D.3 | `wdl/VisualizeCnvs.wdl`    | `wdl/bundles/VisualizeCnvs/` | ✅ clean | Optional per-CNV PNGs |
+| EvidenceQC            | A.6 | `wdl/EvidenceQC.wdl`            | `wdl/bundles/EvidenceQC/` | ✅ clean | ✅ HealthOmics smoke-tested (run `2785300`, 10 samples, COMPLETED 2026-05-28; final workflow id `7602667`) |
+| RefineComplexVariants | C.1 | `wdl/RefineComplexVariants.wdl` | `wdl/bundles/RefineComplexVariants/` | ✅ clean | ⏳ Registered on HealthOmics; not yet smoke-tested end-to-end. Likely needs an iterate-and-patch cycle (same 47-second kill risk pattern as EvidenceQC). |
+| JoinRawCalls          | C.2 | `wdl/JoinRawCalls.wdl`          | `wdl/bundles/JoinRawCalls/` | ✅ clean | ⏳ Registered on HealthOmics; not yet smoke-tested. |
+| SVConcordance         | C.3 | `wdl/SVConcordance.wdl`         | `wdl/bundles/SVConcordance/` | ✅ clean | ⏳ Registered on HealthOmics; not yet smoke-tested. |
+| ScoreGenotypes        | C.4 | `wdl/ScoreGenotypes.wdl`        | `wdl/bundles/ScoreGenotypes/` | ✅ clean | ⏳ Registered on HealthOmics; not yet smoke-tested. |
+| FilterGenotypes       | C.5 | `wdl/FilterGenotypes.wdl`       | `wdl/bundles/FilterGenotypes/` | ✅ clean | ⏳ Registered on HealthOmics; not yet smoke-tested. |
+| MainVcfQC             | D.2 | `wdl/MainVcfQc.wdl`             | `wdl/bundles/MainVcfQC/` | ✅ clean | ⚠️ HealthOmics path blocked by 47-second kill on `IdentifyDuplicates` scatter + `MergeDuplicates` aggregator. **EC2 hybrid is the production path** — see the "MainVcfQC EC2 hybrid" subsection below. |
+| VisualizeCnvs         | D.3 | `wdl/VisualizeCnvs.wdl`         | `wdl/bundles/VisualizeCnvs/` | ✅ clean | ⏳ Registered on HealthOmics; not yet smoke-tested. |
 
 Plus **RegenotypeCNVs** is now activated for cohorts ≥ 100 samples
 (previously registered but always skipped).
+
+(Per-module file lists, transitive imports, and divergence-by-divergence
+provenance are recorded in `docs/divergence-log.md` "Phase 8: v1.0
+module-completeness amendment" — kept as the authoritative source so this
+audit only tracks the per-module verdict.)
 
 ### Divergences observed
 
@@ -213,17 +226,20 @@ No `gs://` URI usages found in any of the 8 Phase 8 bundles.
 
 ### Status of registration
 
-The bundles are committed and lint clean, but **not yet registered with
-HealthOmics in any account**. The customer (or any operator running
-`scripts/bootstrap/08_register_workflows.py`) will register them on first
-deployment; the result populates `workflow-ids.json`, which
-`scripts/run_cohort_e2e.py` reads at startup to wire the `WORKFLOWS` dict.
+The bundles are committed and lint clean. As of 2026-05-28 all 18
+workflows (the original 10 + the 8 Phase 8 modules) are **registered with
+HealthOmics** in the validation account; the IDs are recorded in
+`workflow-ids.json`, which `scripts/run_cohort_e2e.py` reads at startup to
+wire the `WORKFLOWS` dict. EvidenceQC's final post-patch ID is `7602667`;
+MainVcfQC's HealthOmics ID is retained in the registration manifest for
+forensic reference even though Phase D.2 is dispatched via the EC2 hybrid
+in production (see "MainVcfQC EC2 hybrid" below).
 
 The orchestrator's new phase functions (`phase_a6_evidence_qc`,
 `phase_c_post_processing`, `phase_d2_main_vcf_qc`, `phase_d3_visualize_cnvs`)
-are **skip-safe**: when the workflow ID is `None` they log
-`[SKIP] ... not yet registered` and continue, so the existing 10-module
-pipeline still runs end-to-end during the registration interim.
+are **skip-safe**: when a workflow ID is `None` they log
+`[SKIP] ... not yet registered` and continue, so the pipeline still runs
+end-to-end if a deployment is missing one of the new IDs.
 
 ### Validation iterations 2026-05-27 / 2026-05-28
 
@@ -290,11 +306,54 @@ failed runs. Iteration 6 hit cache for all 17 tasks (cost $0.00).
 Cold-start cost for a fresh 10-sample EvidenceQC run is ~$0.04, or
 $0.005 per sample.
 
-**Open issue**: the 7 other Phase 8 workflows (`RefineComplexVariants`,
+**Open issue**: the 6 remaining Phase 8 workflows (`RefineComplexVariants`,
 `JoinRawCalls`, `SVConcordance`, `ScoreGenotypes`, `FilterGenotypes`,
-`MainVcfQC`, `VisualizeCnvs`) likely have similar HealthOmics
-compatibility issues. Each will need its own iterate-and-patch cycle
-before the full pipeline smoke can run end-to-end.
+`VisualizeCnvs`) are registered with HealthOmics but **not yet end-to-end
+smoke-tested**. They likely have HealthOmics compatibility issues similar to
+EvidenceQC (47-second kill on scatter→aggregate patterns, miniwdl-vs-Cromwell
+semantic differences, IAM gaps on `run-cache/*`). Each will need its own
+iterate-and-patch cycle before the full Phase 8 pipeline smoke can run end-to-end
+(task 8.10). MainVcfQC has already hit the 47-second kill on its
+`IdentifyDuplicates`/`MergeDuplicates` step and is run via an EC2 hybrid (see
+next subsection).
+
+#### MainVcfQC (Phase D.2) — EC2 hybrid alternative execution path
+
+⚠️ **HealthOmics path blocked; EC2 hybrid is the production path.**
+
+`MainVcfQc.wdl` contains a 10-VCF `IdentifyDuplicates` scatter followed by a
+`MergeDuplicates` aggregator. Both consume per-VCF outputs from the scatter,
+which is the same scatter→aggregate pattern that triggers the **HealthOmics
+47-second multi-task kill** on:
+
+- `MakeCohortVcf.CombineBatches` (per-batch `GroupedSVCluster` → `svtk resolve`),
+- `Scramble` (`cluster_identifier` per-chr → `SCRAMble.R` aggregator),
+- `EvidenceQC.RawVcfQC` (per-sample/per-caller scatter → `PickOutliers` +
+  `MergeVariantCounts` aggregators).
+
+| | Upstream `MainVcfQc.wdl` (HealthOmics path) | EC2 hybrid (`scripts/run_main_vcf_qc_ec2.sh`) |
+|---|---|---|
+| Engine | miniwdl on HealthOmics | direct `docker run` on a standard EC2 VM (dispatched via SSM) |
+| Docker image | `gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604` | **same** image, **same** Python entry-points |
+| Scatter shape | `IdentifyDuplicates` over up to 10 VCFs, then `MergeDuplicates` | same algorithm, same per-VCF processing, same merge step |
+| Outcome | terminated at ~47 s with no engine log | runs to completion in ~tens of minutes |
+| Output S3 layout | `s3://healthomics-outputs-<acct>-apse1/runs/gatk-sv-e2e/<cohort>/main-vcf-qc/...` | `s3://healthomics-outputs-<acct>-apse1/runs/gatk-sv-e2e/<cohort>/main-vcf-qc-ec2/...` (same prefix shape; downstream consumers point at whichever is populated) |
+
+🟢 **SAFE** in the algorithmic sense — same Docker image, same Python scripts,
+same flags as the upstream `MainVcfQc.wdl` task definitions. The EC2 hybrid
+exists solely because of the HealthOmics scheduler quirk, mirroring the same
+EC2-hybrid treatment already documented for `MakeCohortVcf.CombineBatches` and
+the `MakeCohortVcf` remaining-steps cascade in Phase C.
+
+**Dispatch**: `scripts/run_main_vcf_qc_smoke_ec2.py` uploads the bash script
+to S3, sends the SSM run-command to the shared EC2 hybrid instance, and tags
+the instance with `gatk-sv:cohort-id`, `gatk-sv:workflow-version=main-vcf-qc-ec2-bash`,
+and `gatk-sv:module=MainVcfQC` for cost tracking.
+
+**HealthOmics registration retained**: the `MainVcfQC` HealthOmics workflow
+ID stays in `workflow-ids.json` for forensic reference (so a future operator
+can re-test once HealthOmics fixes the multi-task kill). The
+`run_cohort_e2e.py` Phase D.2 dispatch is the EC2 hybrid by default.
 
 ## Why this slipped through (process gaps)
 

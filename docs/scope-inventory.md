@@ -30,6 +30,29 @@ EvidenceQC, the GQ_Recalibrator chain (JoinRawCalls → SVConcordance →
 ScoreGenotypes → FilterGenotypes), RefineComplexVariants, MainVcfQC, and
 VisualizeCnvs — and activated RegenotypeCNVs for cohorts ≥ 100 samples.
 
+### Module_Phase boundaries (four)
+
+Per the requirements glossary (Req 19.10), the 19 modules are grouped into four
+`Module_Phase` boundaries that match the orchestrator's `--skip-*` CLI flag set:
+
+| Phase | Trigger | Modules in this phase |
+|---|---|---|
+| **Phase A — per-sample evidence** | once per cohort sample | `GatherSampleEvidence` (A.1–A.5: cc + cse + manta + wham on HealthOmics, scramble on EC2 hybrid), `EvidenceQC` (A.6) |
+| **Phase B — cohort modules** | once per cohort | `TrainGCNV`, `GatherBatchEvidence`, `ClusterBatch`, `GenerateBatchMetrics`, `FilterBatch`, `MergeBatchSites`, `GenotypeBatch`, `RegenotypeCNVs` (cohorts ≥ 100 samples) |
+| **Phase C — post-processing** | once per cohort, after Phase B | `MakeCohortVcf` (C.0, EC2 hybrid; covers CombineBatches + ResolveComplexVariants + GenotypeComplexVariants + CleanVcf), `RefineComplexVariants` (C.1), then the **GQ_Recalibrator chain**: `JoinRawCalls` (C.2) → `SVConcordance` (C.3) → `ScoreGenotypes` (C.4) → `FilterGenotypes` (C.5) |
+| **Phase D — delivery** | once per cohort, after Phase C | `AnnotateVcf` (D.1), `MainVcfQC` (D.2), `VisualizeCnvs` (D.3, optional via `--include-visualize-cnvs`) |
+
+### GQ_Recalibrator chain (C.2–C.5)
+
+The four-workflow sequence `JoinRawCalls → SVConcordance → ScoreGenotypes →
+FilterGenotypes` produces a quality-score-recalibrated cohort VCF as the input to
+`AnnotateVcf` (Req 19.3). It runs after `RefineComplexVariants` (C.1) and before
+`AnnotateVcf` (D.1). Each step is registered as its own HealthOmics workflow so
+the run cache and retry logic operate on a per-step basis. The validation harness
+compares the FilterGenotypes output (the chain's terminal artifact) against
+`expected_post_gq_vcf` from the cohort manifest — see
+[validation-runbook.md](validation-runbook.md).
+
 ### Phase A — per-sample evidence (per cohort sample)
 
 1. `GatherSampleEvidence` — per-sample SV evidence extraction (Manta, Wham,
@@ -53,16 +76,26 @@ VisualizeCnvs — and activated RegenotypeCNVs for cohorts ≥ 100 samples.
 
 ### Phase C — post-processing (per cohort)
 
-11. `MakeCohortVcf` *(EC2 hybrid)* — cohort-level VCF assembly. Runs
-    CombineBatches + ResolveComplexVariants + GenotypeComplexVariants +
+11. `MakeCohortVcf` *(Phase C.0, EC2 hybrid)* — cohort-level VCF assembly.
+    Runs CombineBatches + ResolveComplexVariants + GenotypeComplexVariants +
     CleanVcf as direct `docker run` on EC2 because the HealthOmics 47-second
     multi-task kill makes the upstream sub-workflow chain unrunnable as
     a HealthOmics workflow.
 12. `RefineComplexVariants` *(Phase C.1)* — refines complex SV calls.
-13. `JoinRawCalls` *(Phase C.2)* — start of GQ_Recalibrator chain.
-14. `SVConcordance` *(Phase C.3)* — annotates concordance with raw calls.
-15. `ScoreGenotypes` *(Phase C.4)* — GQ recalibrator scoring.
-16. `FilterGenotypes` *(Phase C.5)* — drops low-confidence calls.
+
+The next four modules form the **GQ_Recalibrator chain** (Req 19.3) — they run
+sequentially as the final post-processing pass before delivery and produce the
+GQ-recalibrated cohort VCF that feeds `AnnotateVcf`:
+
+13. `JoinRawCalls` *(Phase C.2, GQ_Recalibrator step 1/4)* — joins per-sample
+    raw calls; first step of the chain.
+14. `SVConcordance` *(Phase C.3, GQ_Recalibrator step 2/4)* — annotates
+    concordance against the joined raw calls.
+15. `ScoreGenotypes` *(Phase C.4, GQ_Recalibrator step 3/4)* — applies the
+    trained GQ recalibrator model to score every genotype.
+16. `FilterGenotypes` *(Phase C.5, GQ_Recalibrator step 4/4)* — drops
+    low-confidence calls below the GQ threshold; output is the GQ-recalibrated
+    cohort VCF.
 
 ### Phase D — delivery (per cohort)
 
@@ -80,8 +113,11 @@ from kiro_life_sciences.gatk_sv_healthomics.models import MIGRATED_MODULES
 ```
 
 The four `Module_Phase` boundaries (A, B, C, D) are documented in the
-glossary of the requirements document and enforced by the orchestrator's
-`--skip-*` CLI flags.
+requirements glossary (Req 19.10), enumerated in the table at the top of this
+section, and enforced by the orchestrator's `--skip-*` CLI flags. Per-module
+runtime/cost expectations live in
+[runtime-and-cost-expectations.md](runtime-and-cost-expectations.md); per-module
+workflow IDs and bundle paths live in the main [`README.md`](../README.md).
 
 ## SV callers in scope
 

@@ -2,7 +2,7 @@
 
 Production migration of the [Broad Institute GATK-SV](https://github.com/broadinstitute/gatk-sv) structural-variant pipeline from Terra/Cromwell-on-GCP to AWS HealthOmics in Singapore (`ap-southeast-1`).
 
-End-to-end joint cohort calling for short-read germline samples — `GatherSampleEvidence` → `AnnotateVcf` — running natively on AWS managed services, with a documented hybrid path for one module that hits a HealthOmics service-level issue.
+End-to-end joint cohort calling for short-read germline samples — `GatherSampleEvidence` → `EvidenceQC` → cohort modules → `MakeCohortVcf` (EC2 hybrid) → `RefineComplexVariants` → **GQ_Recalibrator chain** (`JoinRawCalls` → `SVConcordance` → `ScoreGenotypes` → `FilterGenotypes`) → `AnnotateVcf` → `MainVcfQC` (+ optional `VisualizeCnvs`) — running natively on AWS managed services, with a documented hybrid path for the one module that hits a HealthOmics service-level issue.
 
 ## Contents
 
@@ -98,7 +98,7 @@ flowchart LR
         WHAM[gatk-sv/wham:2024-10-25-... — upstream]
     end
 
-    subgraph HO [HealthOmics — 9 of 10 modules]
+    subgraph HO [HealthOmics — Phase A.1–A.4 + Phase B + Phase C.1–C.5 + Phase D]
         GSE[GatherSampleEvidence]
         GBE[GatherBatchEvidence]
         CB[ClusterBatch]
@@ -197,6 +197,23 @@ The role passes the IAM-tightness property test (no `Resource: "*"` on writes, n
 
 The Migration System registers **each upstream module as its own HealthOmics workflow**. Workflow IDs below come from the production registration.
 
+### Module_Phase boundaries (four)
+
+Per Req 19.10, the **19 `Migrated_Modules`** are grouped into four
+`Module_Phase` boundaries:
+
+| Phase | Trigger | Modules |
+|---|---|---|
+| **Phase A — per-sample evidence** | once per cohort sample | `GatherSampleEvidence` (A.1–A.5: cc + cse + manta + wham on HealthOmics, scramble on EC2 hybrid), `EvidenceQC` (A.6) |
+| **Phase B — cohort modules** | once per cohort | `TrainGCNV`, `GatherBatchEvidence`, `ClusterBatch`, `GenerateBatchMetrics`, `FilterBatch`, `MergeBatchSites`, `GenotypeBatch`, `RegenotypeCNVs` (cohorts ≥ 100 samples) |
+| **Phase C — post-processing** | once per cohort, after Phase B | `MakeCohortVcf` (C.0, EC2 hybrid), `RefineComplexVariants` (C.1), then the **GQ_Recalibrator chain** `JoinRawCalls` (C.2) → `SVConcordance` (C.3) → `ScoreGenotypes` (C.4) → `FilterGenotypes` (C.5) |
+| **Phase D — delivery** | once per cohort, after Phase C | `AnnotateVcf` (D.1), `MainVcfQC` (D.2), `VisualizeCnvs` (D.3, optional via `--include-visualize-cnvs`) |
+
+The **GQ_Recalibrator chain** (Req 19.3) is the four-workflow sequence at the end of Phase C — `JoinRawCalls` → `SVConcordance` → `ScoreGenotypes` → `FilterGenotypes` — that produces a quality-score-recalibrated cohort VCF as the input to `AnnotateVcf`. Each step is a separately-registered HealthOmics workflow so the run cache and retry logic operate on a per-step basis. Full per-module enumeration (with caller details, expected outputs, and out-of-scope items) lives in [`docs/scope-inventory.md`](docs/scope-inventory.md); per-module runtime/cost expectations live in [`docs/runtime-and-cost-expectations.md`](docs/runtime-and-cost-expectations.md).
+
+### Original ten modules (validated 2025-Q4)
+
+
 | # | GATK-SV module | AWS service | Workflow ID | Bundle | MELT divergences | Notes |
 |---|---|---|---|---|---:|---|
 | 1 | `GatherSampleEvidence` | HealthOmics + EC2 | `9690943` | `wdl/bundles/GatherSampleEvidence/GatherSampleEvidence-bundle.zip` | 37 | Per-sample scatter of Manta, Wham, Scramble, GATK-gCNV case-mode, PE/SR/RD/BAF extractors. MELT task removed at packaging. In production we split per-tool: **`cc`, `cse`, `manta`, `wham` on HealthOmics**; **`scramble` on EC2** (workflow registration possible but the upstream multi-task `Scramble.wdl` triggers the HealthOmics 47-second multi-task kill — see `docs/wdl-audit.md`). Wham reverted 2026-05-26 from `whamg-fast -x 16` to upstream `whamg` after a body-MD5 validation showed only 83 % record overlap; both Standard and High-Memory tiers now use upstream workflow `8098138` for cost-tag continuity. |
@@ -213,12 +230,16 @@ The Migration System registers **each upstream module as its own HealthOmics wor
 
 All 10 packaged bundles lint clean (`LintAHOWorkflowBundle → success`). Total bundle size: 251 KB. Total MELT divergences: 63. The full divergence record is at [`docs/divergence-log.md`](docs/divergence-log.md).
 
-### v1.0 amendment: 8 additional modules (Req 19, 2026-05-26)
+### v1.0 amendment: 8 additional modules + RegenotypeCNVs activation (Req 19, 2026-05-26)
 
 Customer feedback on 2026-05-26 flagged that upstream GATK-SV v1.0 includes
 22 modules total; the original 10 above missed 8 critical ones, including
 the **GQ_Recalibrator** chain that produces quality-recalibrated genotypes.
 The amendment ports them from upstream `gatk-sv@v1.1` (commit `a1be457`).
+Together with **`TrainGCNV`** (already shipped as part of `GatherBatchEvidence`'s
+gCNV cohort-mode in the original 10) and the activation of **`RegenotypeCNVs`**
+for cohorts ≥ 100 samples, the migrated set covers all **19 `Migrated_Modules`**
+declared in the requirements glossary (Req 19.10).
 
 | # | Module | Phase | Bundle | Role |
 |---|---|---|---|---|
@@ -325,7 +346,7 @@ For a brand-new account/region. ~$5 one-time staging + ~$70 for a 10-sample vali
 7. **Verify upstream `gatk-sv/wham:2024-10-25-...` landed in ECR** (`scripts/bootstrap/04_build_wham.py`). Step 6 already mirrors it from upstream; the previous custom `fast-v5` build is retired.
 8. **Apply ECR pull-through cache + repository creation template** (registry policy from `container-registry-map/`).
 9. **Create the HealthOmics run cache** (CACHE_ALWAYS, ~$2/cohort savings).
-10. **Register the 10 workflow bundles**:
+10. **Register the 18 workflow bundles** (10 originals + 8 v1.0-amendment; `TrainGCNV` is folded into `GatherBatchEvidence`):
     ```bash
     .venv/bin/python scripts/deploy_artifacts.py
     .venv/bin/python -c "
@@ -468,21 +489,36 @@ Concordance vs the Broad reference is **pending** a Terra reference run on the s
 
 ## Cost & runtime expectations
 
-Per-sample cost target: **USD $7.00** for a 100-sample cohort. Allocation per module:
+Per-sample cost target: **USD $7.00** for a 100-sample cohort. Per-module budget
+allocation across all 19 `Migrated_Modules` (the 10 originally validated modules carry
+calibrated numbers; the 8 v1.0-amendment modules + activated `RegenotypeCNVs` + the
+already-shipped `TrainGCNV` step show **TBD** until task 8.10 produces measured
+data — see [`docs/runtime-and-cost-expectations.md`](docs/runtime-and-cost-expectations.md)
+for the full per-phase table and the running ≤$7.50 envelope post-amendment):
 
-| Module | $/sample | Wall-clock (100 samples) | Dominant task |
-|---|---:|---|---|
-| `GatherSampleEvidence` | 3.50 | 6–10 hr | Manta on the largest sample |
-| `GatherBatchEvidence` | 1.00 | 2–4 hr | gCNV cohort-mode training |
-| `GenotypeBatch` | 0.90 | 2–4 hr | Per-site per-sample likelihoods |
-| `ClusterBatch` | 0.30 | 30–60 min | SV clustering |
-| `RegenotypeCNVs` | 0.30 | 30–60 min | CNV re-genotyping |
-| `MakeCohortVcf` | 0.30 | 1–2 hr | Cohort VCF assembly |
-| `AnnotateVcf` | 0.20 | 30–60 min | VEP annotation |
-| `GenerateBatchMetrics` | 0.20 | 20–40 min | Metric computation |
-| `FilterBatch` | 0.20 | 20–40 min | Frequency filtering |
-| `MergeBatchSites` | 0.10 | 10–20 min | I/O-bound |
-| **Total** | **7.00** | **14–22 hr end-to-end** | |
+| Phase | Module | $/sample | Wall-clock (100 samples) | Dominant task |
+|---|---|---:|---|---|
+| A.1–A.5 | `GatherSampleEvidence` | 3.50 | 6–10 hr | Manta on the largest sample |
+| A.6 | `EvidenceQC` | TBD (~0.05) | 10–20 min | Per-sample metric collection |
+| B.1 | `TrainGCNV` | folded into B.2 | folded into B.2 | gCNV training kernel |
+| B.2 | `GatherBatchEvidence` | 1.00 | 2–4 hr | gCNV cohort-mode training |
+| B.3 | `ClusterBatch` | 0.30 | 30–60 min | SV clustering |
+| B.4 | `GenerateBatchMetrics` | 0.20 | 20–40 min | Metric computation |
+| B.5 | `FilterBatch` | 0.20 | 20–40 min | Frequency filtering |
+| B.6 | `MergeBatchSites` | 0.10 | 10–20 min | I/O-bound |
+| B.7 | `GenotypeBatch` | 0.90 | 2–4 hr | Per-site per-sample likelihoods |
+| B.8 | `RegenotypeCNVs` *(≥100 samples)* | 0.30 | 30–60 min | CNV re-genotyping |
+| C.0 | `MakeCohortVcf` *(EC2 hybrid)* | 0.30 | 1–2 hr | Cohort VCF assembly |
+| C.1 | `RefineComplexVariants` | TBD (~0.05) | TBD (~30 min) | Complex SV refinement |
+| C.2 | `JoinRawCalls` *(GQ chain 1/4)* | TBD (~0.05) | TBD (~20 min) | Join per-sample raw calls |
+| C.3 | `SVConcordance` *(GQ chain 2/4)* | TBD (~0.05) | TBD (~30 min) | Concordance annotation |
+| C.4 | `ScoreGenotypes` *(GQ chain 3/4)* | TBD (~0.10) | TBD (~45 min) | GQ recalibrator scoring |
+| C.5 | `FilterGenotypes` *(GQ chain 4/4)* | TBD (~0.05) | TBD (~20 min) | GQ-threshold filtering |
+| D.1 | `AnnotateVcf` | 0.20 | 30–60 min | VEP annotation |
+| D.2 | `MainVcfQC` | TBD (~0.05) | TBD (~30 min) | Cohort QC plot generation |
+| D.3 | `VisualizeCnvs` *(optional)* | TBD (~0.05 if run) | TBD (~30 min if run) | Per-CNV plotting |
+| | **Total (validated 10)** | **7.00** | **14–22 hr end-to-end** | dominated by `GatherSampleEvidence` |
+| | **Total (full 19, post-smoke)** | **TBD ≤ 7.50** | **TBD ≤ 26 hr end-to-end** | pending task 8.10 measurement |
 
 Smaller cohorts pay more per sample because batch-level modules amortize across fewer samples:
 
@@ -666,7 +702,7 @@ The spec docs follow Kiro's spec-driven development methodology — requirements
 |---|---|
 | [`gatk-sv-healthomics-migration`](.kiro/specs/gatk-sv-healthomics-migration/) | Main spec: 18 EARS requirements, 10 correctness properties, full design, phased task plan |
 | [`gbe-pipeline-fix`](.kiro/specs/gbe-pipeline-fix/) | Bugfix spec for the GBE failures hit in session 3 (memory, array alignment, FUSE) |
-| [`step-functions-orchestrator`](.kiro/specs/step-functions-orchestrator/) | Step Functions state machine that chains the 10 modules end-to-end |
+| [`step-functions-orchestrator`](.kiro/specs/step-functions-orchestrator/) | Step Functions state machine that chains the migrated modules end-to-end |
 | [`tiered-wham-memory`](.kiro/specs/tiered-wham-memory/) | Wham memory tiering by CRAM size (16 GiB ≤20 GiB, 30 GiB >20 GiB) |
 
 | Doc | Purpose |
