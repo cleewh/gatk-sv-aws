@@ -89,3 +89,4 @@ refine-cpx-run.json
 .gq-fg-inputs.json
 .tmp_gbe_template_*.json
 .scramble-dispatch-*.json
+.vcf-inspect.sh
