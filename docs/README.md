@@ -12,7 +12,7 @@ See the full spec at `.kiro/specs/gatk-sv-healthomics-migration/` (requirements,
 | Target region | `ap-southeast-1` |
 | Reference build | GRCh38 (default); GRCh37 optional |
 | Input formats | CRAM + CRAI, or BAM + BAI |
-| Migrated modules | 10, end-to-end from `GatherSampleEvidence` to `AnnotateVcf` |
+| Migrated modules | 19 (v1.0 complete: `GatherSampleEvidence` → `MainVcfQC`, incl. the GQ_Recalibrator chain) |
 | SV callers in scope | Manta, Wham, Scramble, GATK-gCNV |
 | Caller excluded | **MELT** (reduced MEI sensitivity accepted) |
 | Per-sample cost target | USD $7.00 |
@@ -81,7 +81,7 @@ HealthOmics `LintAHOWorkflowBundle` MCP call is the second gate — run in Phase
 ### 6. Register each workflow
 
 Call `CreateAHOWorkflow` (or `CreateAHOWorkflowVersion` on subsequent changes) for each
-of the 10 modules. See [workflow-registration.md](workflow-registration.md).
+of the 19 modules. See [workflow-registration.md](workflow-registration.md).
 
 ### 7. Create the Run Cache + IAM role
 

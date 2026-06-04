@@ -33,13 +33,16 @@ End-to-end joint cohort calling for short-read germline samples — `GatherSampl
 
 | Cohort scale tested | 10 samples (GRCh38) |
 |---|---|
-| End-to-end run | ✅ COMPLETE |
-| Final cohort VCF | 18,703 SVs (DEL=9635, INS=4485, DUP=2682, BND=1728, CPX=145, CNV=28) |
+| End-to-end run | ✅ COMPLETE — all four phases A→B→C→D, all 19 modules exercised (smoke test `gatk-sv-156-smoke-test`, 2026-06-03) |
+| Final cohort VCF (FilterGenotypes, PASS-eligible) | 12,041 SVs (DEL=5500, INS=3172, DUP=2085, BND=1199, CPX=63, CNV=22) |
+| GQ_Recalibrator chain | ✅ Validated end-to-end (JoinRawCalls 46,848 → ScoreGenotypes 13,480 → FilterGenotypes 12,041) |
+| MainVcfQC | ✅ 86 QC plots produced |
 | Cross-engine bit-identity (HealthOmics vs miniwdl) | ✅ Verified for Manta on NA12878 (body MD5 match) |
 | Strict + fuzzy concordance vs Broad reference | ⏳ Pending Terra reference run |
-| Per-sample cost target | USD $7.00 — measured via Cost Explorer tags |
+| Per-sample cost | ✅ **Measured $3.62/sample** (target $7.00); ~$3.40/sample projected at 100–156 samples — see [`validation-cohort/reports/2026-05-26-amendment-smoke/cost-report.json`](validation-cohort/reports/2026-05-26-amendment-smoke/cost-report.json) |
+| Full 156-sample cohort | ⏳ NOT run — gated on user confirmation (spec task 8.11) |
 | HealthOmics regions supported | 8 (`get_supported_regions`); we run in `ap-southeast-1` |
-| Open AWS service issue | HealthOmics 47s kill on `gatk GroupedSVCluster` / `svtk resolve` inside deeply nested workflows — see [§The HealthOmics 47-second kill](#the-healthomics-47-second-kill) |
+| Open AWS service issue | HealthOmics ~47s kill on multi-task scatter→aggregate / nested workflows — blocks 6 of 19 modules natively; all run via EC2/miniwdl hybrid. See [§The HealthOmics 47-second kill](#the-healthomics-47-second-kill) |
 
 ## Quick start
 
@@ -98,20 +101,25 @@ flowchart LR
         WHAM[gatk-sv/wham:2024-10-25-... — upstream]
     end
 
-    subgraph HO [HealthOmics — Phase A.1–A.4 + Phase B + Phase C.1–C.5 + Phase D]
-        GSE[GatherSampleEvidence]
+    subgraph HO [HealthOmics — Phase A.1–A.4 + Phase B + RefineComplexVariants + AnnotateVcf]
+        GSE[GatherSampleEvidence cc/cse/manta/wham]
+        EQC[EvidenceQC]
         GBE[GatherBatchEvidence]
         CB[ClusterBatch]
         GBM[GenerateBatchMetrics]
         FB[FilterBatch]
         MBS[MergeBatchSites]
         GB[GenotypeBatch]
+        RCV[RefineComplexVariants]
         AV[AnnotateVcf]
     end
 
-    subgraph EC2 [EC2 + miniwdl — MakeCohortVcf only]
-        CBE[CombineBatches → bash + docker]
-        REM[Resolve / Genotype / Clean / QC → miniwdl]
+    subgraph EC2 [EC2 + miniwdl — components blocked by the ~47s multi-task kill]
+        SCR[Scramble A.5]
+        CBE[MakeCohortVcf.CombineBatches → bash + docker]
+        REM[MakeCohortVcf Resolve/Genotype/Clean → miniwdl]
+        GQ[GQ chain: JoinRawCalls / SVConcordance / ScoreGenotypes / FilterGenotypes]
+        QC[MainVcfQC]
     end
 
     SF[Step Functions orchestrator] --> HO
@@ -370,14 +378,28 @@ For a brand-new account/region. ~$5 one-time staging + ~$70 for a 10-sample vali
 
 ## The HealthOmics 47-second kill
 
-After 17 bundle versions of `MakeCohortVcf` and a controlled diagnostic, we proved HealthOmics terminates two specific GATK-SV tasks at exactly **47.0 ± 1.0 s** of in-container execution time, with no CloudWatch logs delivered and an opaque `RUN_TASK_FAILED` status:
+After 17 bundle versions of `MakeCohortVcf` and a controlled diagnostic, we proved HealthOmics terminates certain GATK-SV tasks at **~45–48 s** of in-container execution time, with no CloudWatch logs delivered and an opaque `RUN_TASK_FAILED` status. As of the 2026-06-03 Phase 8 smoke test the same signature has been confirmed across **four unrelated tools in four unrelated images**:
 
-- `gatk GroupedSVCluster` (in `MakeCohortVcf.CombineBatches`)
+- `gatk GroupedSVCluster` (in `MakeCohortVcf.CombineBatches`) — run `9723050`, 45.3–47.3s
+- `gatk SVCluster` (in `JoinRawCalls`, 24-contig scatter) — run `9792359`, 46.9–48.4s
 - `svtk resolve` (in `MakeCohortVcf.ResolveComplexVariants` → `ResolveCpxSv`)
+- `cluster_identifier` (in `Scramble.ScramblePart1`) — runs `2865779` / `8587037`, ~48s
 
-The kill triggers **only** when the task is invoked from inside a deeply nested sub-workflow chain (`MakeCohortVcf` and `MakeCohortVcfRemainingSteps`). The same task, same image, same arguments, completes cleanly in 44s when invoked from a single-task diagnostic WDL.
+The kill triggers **only** when the failing task runs inside a workflow with **≥ 2 tasks that wire one task's output into another** — a scatter that feeds an aggregator, or a deeply nested sub-workflow chain. The same task, same image, same arguments, completes cleanly in ~44s when invoked from a **single-task** diagnostic WDL (control run `5601461`), and completes in seconds under **miniwdl on EC2** (the same engine HealthOmics ships).
 
-**Variables tested without effect — all still kill at 47s:**
+**Components that therefore cannot run natively (6 of 19 modules), all run via the EC2/miniwdl hybrid:**
+
+1. `MakeCohortVcf.CombineBatches` (`gatk GroupedSVCluster`) — `scripts/run_combinebatches_ec2.sh`
+2. `MakeCohortVcf.{Resolve,Genotype,Clean}` — `scripts/run_remaining_steps_ec2.py`
+3. `Scramble` (A.5) — `scripts/run_scramble_ec2.sh`
+4. `JoinRawCalls` → `SVConcordance` → `ScoreGenotypes` → `FilterGenotypes` (the GQ_Recalibrator chain, C.2–C.5) — `scripts/run_gq_chain_ec2.py`
+5. `MainVcfQC` (D.2) — `scripts/run_main_vcf_qc_ec2.sh`
+
+`EvidenceQC.RawVcfQC` hit the same aggregator kill but was made to run natively by **removing** its two post-scatter aggregator tasks (final workflow `7602667`).
+
+A full case report with per-run evidence, reproduction inputs, and ARNs for the HealthOmics service team is compiled in the (gitignored) `issue-artifact/` directory.
+
+**Variables tested without effect — all still kill at ~47s:**
 
 | Dimension | Range tested |
 |---|---|
