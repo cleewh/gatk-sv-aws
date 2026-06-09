@@ -692,7 +692,124 @@ def _gq_dockers() -> dict[str, str]:
     }
 
 
-def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dict[str, Any]:
+# --------------------------------------------------------------------------- #
+# HealthOmics native-output resolver + index co-location
+# --------------------------------------------------------------------------- #
+# HealthOmics writes each run's outputs under a NESTED, run-id-scoped layout:
+#
+#     {outputUri}{run_id}/out/{output_decl_name}/{file}
+#
+# (the orchestrator passes outputUri=".../batch/{module_key}/", so the actual
+# output of a run lives at ".../batch/{module_key}/{run_id}/out/{decl}/{file}").
+#
+# A second wrinkle: for a `File`-typed VCF output declaration, HealthOmics
+# sometimes places the companion `.tbi` ONLY in a sibling
+# `{decl}_index/` folder — NOT next to the data `.vcf.gz`. The downstream
+# WDL's `vcf + ".tbi"` localizer then fails with INPUT_URI_NOT_FOUND. The
+# native e2e run hit this on every inter-step hand-off (C.3->C.4, C.4->C.5,
+# C.5->D.1, D.1->D.2) and required a manual `aws s3 cp` of the index next to
+# the data VCF. `_resolve_output_and_colocate_index` automates that copy so
+# the native Phase C/D chain runs hands-free.
+def _split_s3(uri: str) -> tuple[str, str]:
+    """Split an s3://bucket/key URI into (bucket, key)."""
+    assert uri.startswith("s3://"), f"not an s3 uri: {uri}"
+    without_scheme = uri[len("s3://"):]
+    bucket, _, key = without_scheme.partition("/")
+    return bucket, key
+
+
+def _resolve_output_and_colocate_index(
+    s3,
+    run_output_uri: str,
+    decl_folder: str,
+    *,
+    suffix: str = ".vcf.gz",
+    index_suffix: str = ".tbi",
+) -> str:
+    """Resolve a run's primary output file and guarantee its index is co-located.
+
+    ``run_output_uri`` is the run-scoped base (``get_run``'s ``runOutputUri``,
+    i.e. ``{outputUri}{run_id}``). The data file is found under
+    ``{run_output_uri}/out/{decl_folder}/`` by matching ``suffix``; if its
+    ``index_suffix`` companion is absent there, this looks in the sibling
+    ``{decl_folder}_index/`` folder and copies the index next to the data file.
+
+    Returns the resolved data-file S3 URI (the value to feed into the next
+    module's input parameter). For index-less outputs (e.g. a ``.tsv`` ploidy
+    table), pass ``index_suffix=""`` to skip the co-location step.
+    """
+    base = run_output_uri.rstrip("/")
+    bucket, _ = _split_s3(base + "/")
+    prefix = f"{base[len('s3://') + len(bucket) + 1:]}/out/{decl_folder}/"
+
+    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    contents = resp.get("Contents", [])
+    keys = [obj["Key"] for obj in contents]
+    data_keys = [
+        k for k in keys
+        if k.endswith(suffix) and not k.endswith(index_suffix)
+    ] if index_suffix else [k for k in keys if k.endswith(suffix)]
+    if not data_keys:
+        raise RuntimeError(
+            f"no '{suffix}' output under s3://{bucket}/{prefix} "
+            f"(found {len(keys)} object(s): {keys[:5]})"
+        )
+    # Prefer the shortest match (the primary data file, not an index).
+    data_key = sorted(data_keys, key=len)[0]
+    data_uri = f"s3://{bucket}/{data_key}"
+
+    if not index_suffix:
+        return data_uri
+
+    index_key = data_key + index_suffix
+    if index_key in keys:
+        return data_uri  # index already co-located
+
+    # Index missing next to the data file: look in the sibling _index folder.
+    sib_prefix = f"{base[len('s3://') + len(bucket) + 1:]}/out/{decl_folder}_index/"
+    sib = s3.list_objects_v2(Bucket=bucket, Prefix=sib_prefix)
+    sib_index = [
+        obj["Key"] for obj in sib.get("Contents", [])
+        if obj["Key"].endswith(index_suffix)
+    ]
+    if not sib_index:
+        raise RuntimeError(
+            f"index {data_uri}{index_suffix} not found next to the data VCF "
+            f"and no '{index_suffix}' object under sibling "
+            f"s3://{bucket}/{sib_prefix}"
+        )
+    src_index_key = sib_index[0]
+    s3.copy_object(
+        Bucket=bucket,
+        Key=index_key,
+        CopySource={"Bucket": bucket, "Key": src_index_key},
+    )
+    print(
+        f"    co-located index: s3://{bucket}/{src_index_key} "
+        f"-> s3://{bucket}/{index_key}"
+    )
+    return data_uri
+
+
+# Output-declaration folder name for each Phase C/D module's primary VCF.
+# These are the WDL output decl names HealthOmics uses as the `out/<name>/`
+# sub-folder (observed in the native e2e run, 2026-06-08).
+_PRIMARY_VCF_DECL = {
+    "refine_complex_variants": "cpx_refined_vcf",
+    "join_raw_calls": "joined_raw_calls_vcf",
+    "sv_concordance": "concordance_vcf",
+    "score_genotypes": "unfiltered_recalibrated_vcf",
+    "filter_genotypes": "filtered_vcf",
+    "annotate_vcf": "annotated_vcf",
+}
+
+
+def _phase_c_overrides(
+    module_key: str,
+    cohort_id: str,
+    output_base: str,
+    resolved: dict[str, str] | None = None,
+) -> dict[str, Any]:
     """Build the HealthOmics `parameters` dict for a Phase C post-processing
     module, wiring each step's input to the prior step's S3 output.
 
@@ -700,7 +817,15 @@ def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dic
     so the orchestrator must fully specify their inputs. Mirrors the input
     builders in scripts/run_gq_chain_ec2.py — the difference is execution
     engine (native HealthOmics + WDL_LENIENT) vs the former EC2/miniwdl hybrid.
+
+    ``resolved`` carries the *actual* run-scoped S3 URIs of upstream Phase C
+    outputs (produced by `_resolve_output_and_colocate_index` after each step
+    completes), keyed by the producing module (plus a `join_raw_calls_ploidy`
+    entry for the ploidy table). When a key is present it is used in place of
+    the static path guess, so the chain follows HealthOmics' nested
+    `{run_id}/out/{decl}/` layout rather than a hand-built path.
     """
+    resolved = resolved or {}
     d = _gq_dockers()
     batch = f"{output_base}/batch"
     ref = REF_BASE
@@ -752,8 +877,14 @@ def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dic
 
     if module_key == "sv_concordance":
         return {
-            "SVConcordance.eval_vcf": f"{batch}/refine_complex_variants/{cohort_id}.refine_complex.cpx_refined.vcf.gz",
-            "SVConcordance.truth_vcf": f"{batch}/join_raw_calls/{cohort_id}.join_raw_calls.vcf.gz",
+            "SVConcordance.eval_vcf": resolved.get(
+                "refine_complex_variants",
+                f"{batch}/refine_complex_variants/{cohort_id}.refine_complex.cpx_refined.vcf.gz",
+            ),
+            "SVConcordance.truth_vcf": resolved.get(
+                "join_raw_calls",
+                f"{batch}/join_raw_calls/{cohort_id}.join_raw_calls.vcf.gz",
+            ),
             "SVConcordance.output_prefix": f"{cohort_id}.sv_concordance",
             "SVConcordance.contig_list": f"{ref}/gs_primary_contigs.list",
             "SVConcordance.reference_dict": f"{ref}/Homo_sapiens_assembly38.dict",
@@ -764,7 +895,10 @@ def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dic
     if module_key == "score_genotypes":
         gt = f"{ref}/ucsc-genome-tracks"
         return {
-            "ScoreGenotypes.vcf": f"{batch}/sv_concordance/{cohort_id}.sv_concordance.vcf.gz",
+            "ScoreGenotypes.vcf": resolved.get(
+                "sv_concordance",
+                f"{batch}/sv_concordance/{cohort_id}.sv_concordance.vcf.gz",
+            ),
             "ScoreGenotypes.output_prefix": f"{cohort_id}.score_genotypes",
             "ScoreGenotypes.gq_recalibrator_model_file": f"{ref}/gatk-sv-recalibrator.aou_phase_1.v1.model",
             # AoU model estimates AF from genotypes only for >=100-sample cohorts;
@@ -786,9 +920,15 @@ def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dic
 
     if module_key == "filter_genotypes":
         return {
-            "FilterGenotypes.vcf": f"{batch}/score_genotypes/{cohort_id}.score_genotypes.gq_recalibrated.vcf.gz",
+            "FilterGenotypes.vcf": resolved.get(
+                "score_genotypes",
+                f"{batch}/score_genotypes/{cohort_id}.score_genotypes.gq_recalibrated.vcf.gz",
+            ),
             "FilterGenotypes.output_prefix": f"{cohort_id}.filter_genotypes",
-            "FilterGenotypes.ploidy_table": f"{batch}/join_raw_calls/{cohort_id}.join_raw_calls.ploidy.tsv",
+            "FilterGenotypes.ploidy_table": resolved.get(
+                "join_raw_calls_ploidy",
+                f"{batch}/join_raw_calls/{cohort_id}.join_raw_calls.ploidy.tsv",
+            ),
             "FilterGenotypes.sl_cutoff_table": f"{ref}/aou_sl_cutoff_table.tsv",
             "FilterGenotypes.primary_contigs_fai": f"{ref}/gs_primary_contigs.fai",
             "FilterGenotypes.ped_file": ped,
@@ -800,7 +940,9 @@ def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dic
     raise KeyError(f"no Phase C override builder for module {module_key!r}")
 
 
-def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[StageRecord]:
+def phase_c_post_processing(
+    args: argparse.Namespace, output_base: str
+) -> tuple[list[StageRecord], dict[str, str]]:
     """Run the post-processing chain on the cohort VCF natively on HealthOmics:
 
       C.1 RefineComplexVariants  (refines complex SV calls)
@@ -822,6 +964,7 @@ def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[
     print("=" * 78)
 
     omics = boto3.client("omics", region_name=REGION)
+    s3 = boto3.client("s3", region_name=REGION)
     sequence = [
         ("C.1 RefineComplexVariants", "refine_complex_variants"),
         ("C.2 JoinRawCalls",          "join_raw_calls"),
@@ -830,6 +973,11 @@ def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[
         ("C.5 FilterGenotypes",       "filter_genotypes"),
     ]
     records: list[StageRecord] = []
+    # resolved[module_key] -> the actual run-scoped primary-VCF S3 URI that
+    # the module produced (with its index co-located). Threaded forward so
+    # each step consumes its predecessor's real nested output path rather
+    # than a static guess. `join_raw_calls_ploidy` carries the ploidy table.
+    resolved: dict[str, str] = {}
     for label, module_key in sequence:
         print(f"\n--- {label} ---")
         skipped = _maybe_skip_phase(label, module_key)
@@ -842,24 +990,59 @@ def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[
             cohort_id=args.cohort_id,
             sample_count=args.sample_count,
             output_base=output_base,
-            parameter_overrides=_phase_c_overrides(module_key, args.cohort_id, output_base),
+            parameter_overrides=_phase_c_overrides(
+                module_key, args.cohort_id, output_base, resolved=resolved
+            ),
         )
         print(f"  Started run {rec.id} ({rec.name})")
         info = poll_healthomics_run(omics, rec.id, label=module_key)
         rec.finished_at = _now_iso()
         rec.status = info.get("status")
         rec.duration_sec = _wall_clock(info)
-        rec.extra = {"output_uri": info.get("outputUri", "")}
+        run_output_uri = info.get("runOutputUri", "")
+        rec.extra = {"output_uri": info.get("outputUri", ""),
+                     "run_output_uri": run_output_uri}
         records.append(rec)
         if rec.status != "COMPLETED":
             raise RuntimeError(f"{label} run {rec.id} ended in status {rec.status}")
-    return records
+        # Resolve the real nested output path and co-locate the .tbi so the
+        # next step's `vcf + ".tbi"` localizer finds it (avoids the manual
+        # `aws s3 cp` the native e2e run originally needed).
+        decl = _PRIMARY_VCF_DECL.get(module_key)
+        if decl and run_output_uri:
+            try:
+                data_uri = _resolve_output_and_colocate_index(
+                    s3, run_output_uri, decl
+                )
+                resolved[module_key] = data_uri
+                print(f"  resolved {module_key} output: {data_uri}")
+                if module_key == "join_raw_calls":
+                    # JoinRawCalls also emits the ploidy table FilterGenotypes
+                    # needs (no index). Resolve it from its own decl folder.
+                    resolved["join_raw_calls_ploidy"] = (
+                        _resolve_output_and_colocate_index(
+                            s3, run_output_uri, "ploidy_table",
+                            suffix=".tsv", index_suffix="",
+                        )
+                    )
+                    print(f"  resolved ploidy table: "
+                          f"{resolved['join_raw_calls_ploidy']}")
+            except RuntimeError as exc:
+                # Don't hard-fail the chain on a resolver miss; fall back to
+                # the static path guess (next step's override has a default).
+                print(f"  WARNING: output resolve/co-locate failed for "
+                      f"{module_key}: {exc}")
+    return records, resolved
 
 
 # --------------------------------------------------------------------------- #
 # Phase D.2 / D.3 : MainVcfQC + (optional) VisualizeCnvs (Req 19)
 # --------------------------------------------------------------------------- #
-def phase_d2_main_vcf_qc(args: argparse.Namespace, output_base: str) -> StageRecord:
+def phase_d2_main_vcf_qc(
+    args: argparse.Namespace,
+    output_base: str,
+    resolved: dict[str, str] | None = None,
+) -> StageRecord:
     """Run MainVcfQC on the post-AnnotateVcf cohort VCF (cohort-level QC plots)."""
     print("=" * 78)
     print(f"PHASE D.2: MainVcfQC  ({args.cohort_id})")
@@ -869,9 +1052,14 @@ def phase_d2_main_vcf_qc(args: argparse.Namespace, output_base: str) -> StageRec
     if skipped is not None:
         return skipped
 
+    resolved = resolved or {}
     d = _gq_dockers()
+    annotated_vcf = resolved.get(
+        "annotate_vcf",
+        f"{output_base}/batch/annotate_vcf/{args.cohort_id}.annotated.vcf.gz",
+    )
     overrides = {
-        "MainVcfQc.vcfs": [f"{output_base}/batch/annotate_vcf/{args.cohort_id}.annotated.vcf.gz"],
+        "MainVcfQc.vcfs": [annotated_vcf],
         "MainVcfQc.prefix": f"{args.cohort_id}.main_vcf_qc",
         "MainVcfQc.primary_contigs_fai": f"{REF_BASE}/gs_primary_contigs.fai",
         "MainVcfQc.ped_file": f"{REF_BASE}/cohort-{args.cohort_id}.ped",
@@ -1243,28 +1431,56 @@ def phase_c_makecohortvcf_hybrid(
 # --------------------------------------------------------------------------- #
 # Phase D : AnnotateVcf
 # --------------------------------------------------------------------------- #
-def phase_d_annotate_vcf(args: argparse.Namespace, output_base: str) -> StageRecord:
+def phase_d_annotate_vcf(
+    args: argparse.Namespace,
+    output_base: str,
+    resolved: dict[str, str] | None = None,
+) -> tuple[StageRecord, dict[str, str]]:
     print("=" * 78)
     print(f"PHASE D: AnnotateVcf  ({args.cohort_id})")
     print("=" * 78)
 
+    resolved = dict(resolved or {})
     omics = boto3.client("omics", region_name=REGION)
+    s3 = boto3.client("s3", region_name=REGION)
+
+    # AnnotateVcf consumes the FilterGenotypes output. When Phase C ran in this
+    # same orchestration, `resolved["filter_genotypes"]` holds the real nested
+    # path (index already co-located); otherwise fall back to the static guess.
+    overrides: dict[str, Any] = {}
+    fg_vcf = resolved.get("filter_genotypes")
+    if fg_vcf:
+        overrides["AnnotateVcf.vcf"] = fg_vcf
+
     rec = _start_cohort_module(
         omics,
         module_key="annotate_vcf",
         cohort_id=args.cohort_id,
         sample_count=args.sample_count,
         output_base=output_base,
+        parameter_overrides=overrides or None,
     )
     print(f"  Started run {rec.id}")
     info = poll_healthomics_run(omics, rec.id, label="annotate_vcf")
     rec.finished_at = _now_iso()
     rec.status = info.get("status")
     rec.duration_sec = _wall_clock(info)
-    rec.extra = {"output_uri": info.get("outputUri", "")}
+    run_output_uri = info.get("runOutputUri", "")
+    rec.extra = {"output_uri": info.get("outputUri", ""),
+                 "run_output_uri": run_output_uri}
     if rec.status != "COMPLETED":
         raise RuntimeError(f"AnnotateVcf run {rec.id} ended in status {rec.status}")
-    return rec
+    # Resolve the annotated VCF + co-locate its index for MainVcfQC.
+    if run_output_uri:
+        try:
+            resolved["annotate_vcf"] = _resolve_output_and_colocate_index(
+                s3, run_output_uri, _PRIMARY_VCF_DECL["annotate_vcf"]
+            )
+            print(f"  resolved annotate_vcf output: {resolved['annotate_vcf']}")
+        except RuntimeError as exc:
+            print(f"  WARNING: output resolve/co-locate failed for "
+                  f"annotate_vcf: {exc}")
+    return rec, resolved
 
 
 # --------------------------------------------------------------------------- #
@@ -1450,6 +1666,11 @@ def main() -> int:
     all_records: list[StageRecord] = []
     pipeline_started = time.time()
 
+    # Resolved upstream Phase C output URIs (real nested HealthOmics paths with
+    # indexes co-located), threaded from Phase C into Phase D. Initialized here
+    # so it exists even when Phase C is skipped.
+    phase_c_resolved: dict[str, str] = {}
+
     # phase_outcomes tracks the rolled-up status for each Module_Phase
     # boundary so subsequent phases can enforce the A→B→C→D prereq chain.
     phase_outcomes: dict[str, dict[str, Any]] = {}
@@ -1525,7 +1746,8 @@ def main() -> int:
             if not args.skip_makecohortvcf:
                 phase_c_records.extend(phase_c_makecohortvcf_hybrid(args, output_base))
             if not args.skip_post_processing:
-                phase_c_records.extend(phase_c_post_processing(args, output_base))
+                pp_records, phase_c_resolved = phase_c_post_processing(args, output_base)
+                phase_c_records.extend(pp_records)
         finally:
             all_records.extend(phase_c_records)
             phase_outcomes["C"] = _summarize_phase(phase_c_records, "C")
@@ -1540,11 +1762,17 @@ def main() -> int:
     else:
         _check_phase_prereq(phase_outcomes, current="D", required=["C"])
         phase_d_records: list[StageRecord] = []
+        phase_d_resolved: dict[str, str] = dict(phase_c_resolved)
         try:
             if not args.skip_annotate:
-                phase_d_records.append(phase_d_annotate_vcf(args, output_base))
+                anno_rec, phase_d_resolved = phase_d_annotate_vcf(
+                    args, output_base, resolved=phase_d_resolved
+                )
+                phase_d_records.append(anno_rec)
             if not args.skip_main_vcf_qc:
-                phase_d_records.append(phase_d2_main_vcf_qc(args, output_base))
+                phase_d_records.append(
+                    phase_d2_main_vcf_qc(args, output_base, resolved=phase_d_resolved)
+                )
             if args.include_visualize_cnvs:
                 phase_d_records.append(phase_d3_visualize_cnvs(args, output_base))
         finally:
