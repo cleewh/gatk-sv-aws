@@ -681,8 +681,127 @@ def phase_a6_evidence_qc(args: argparse.Namespace, output_base: str) -> StageRec
 # --------------------------------------------------------------------------- #
 # Phase C.1 - C.5 : RefineComplexVariants + GQ_Recalibrator chain (Req 19)
 # --------------------------------------------------------------------------- #
+def _gq_dockers() -> dict[str, str]:
+    """ECR docker URIs for the post-processing modules (this account/region)."""
+    ecr = f"{ACCOUNT}.dkr.ecr.{REGION}.amazonaws.com"
+    return {
+        "gatk": f"{ecr}/gatk-sv/gatk:mw-gatk-sv-672d85",
+        "svbm": f"{ecr}/gatk-sv/sv-base-mini:2024-10-25-v0.29-beta-5ea22a52",
+        "svp": f"{ecr}/gatk-sv/sv-pipeline:2026-02-06-v1.1-797b7604",
+        "linux": f"{ecr}/ecr-public/lts/ubuntu:18.04",
+    }
+
+
+def _phase_c_overrides(module_key: str, cohort_id: str, output_base: str) -> dict[str, Any]:
+    """Build the HealthOmics `parameters` dict for a Phase C post-processing
+    module, wiring each step's input to the prior step's S3 output.
+
+    These modules have no TEMPLATE_RUNS entry (they're the Phase 8 GQ chain),
+    so the orchestrator must fully specify their inputs. Mirrors the input
+    builders in scripts/run_gq_chain_ec2.py — the difference is execution
+    engine (native HealthOmics + WDL_LENIENT) vs the former EC2/miniwdl hybrid.
+    """
+    d = _gq_dockers()
+    batch = f"{output_base}/batch"
+    ref = REF_BASE
+    ped = f"{ref}/cohort-{cohort_id}.ped"
+
+    if module_key == "refine_complex_variants":
+        # Consumes the MakeCohortVcf cleaned cohort VCF (EC2-hybrid output)
+        # plus per-batch PE metrics / depth beds from GatherBatchEvidence and
+        # the batch sample list. Single-batch cohort -> 1-element arrays.
+        gbe = f"{batch}/gather-batch-evidence"
+        return {
+            "RefineComplexVariants.vcf": f"{batch}/make-cohort-vcf-ec2/cleaned/{cohort_id}.cleaned.vcf.gz",
+            "RefineComplexVariants.prefix": f"{cohort_id}.refine_complex",
+            "RefineComplexVariants.batch_name_list": [cohort_id],
+            "RefineComplexVariants.batch_sample_lists": [
+                f"{batch}/refine-complex-variants/inputs/{cohort_id}.samples.list"
+            ],
+            "RefineComplexVariants.PE_metrics": [f"{gbe}/merged_PE/{cohort_id}.pe.txt.gz"],
+            "RefineComplexVariants.PE_metrics_indexes": [f"{gbe}/merged_PE/{cohort_id}.pe.txt.gz.tbi"],
+            "RefineComplexVariants.Depth_DEL_beds": [f"{gbe}/merged_dels/{cohort_id}.DEL.bed.gz"],
+            "RefineComplexVariants.Depth_DUP_beds": [f"{gbe}/merged_dups/{cohort_id}.DUP.bed.gz"],
+            "RefineComplexVariants.n_per_split": 5000,
+            "RefineComplexVariants.linux_docker": d["linux"],
+            "RefineComplexVariants.sv_base_mini_docker": d["svbm"],
+            "RefineComplexVariants.sv_pipeline_docker": d["svp"],
+        }
+
+    if module_key == "join_raw_calls":
+        cb = f"{batch}/cluster_batch/out"
+        return {
+            "JoinRawCalls.prefix": f"{cohort_id}.join_raw_calls",
+            "JoinRawCalls.ped_file": ped,
+            "JoinRawCalls.contig_list": f"{ref}/gs_primary_contigs.list",
+            "JoinRawCalls.reference_fasta": f"{ref}/Homo_sapiens_assembly38.fasta",
+            "JoinRawCalls.reference_fasta_fai": f"{ref}/Homo_sapiens_assembly38.fasta.fai",
+            "JoinRawCalls.reference_dict": f"{ref}/Homo_sapiens_assembly38.dict",
+            "JoinRawCalls.clustered_depth_vcfs": [f"{cb}/clustered_depth_vcf/{cohort_id}.cluster_batch.depth.vcf.gz"],
+            "JoinRawCalls.clustered_depth_vcf_indexes": [f"{cb}/clustered_depth_vcf/{cohort_id}.cluster_batch.depth.vcf.gz.tbi"],
+            "JoinRawCalls.clustered_manta_vcfs": [f"{cb}/clustered_manta_vcf/{cohort_id}.cluster_batch.manta.vcf.gz"],
+            "JoinRawCalls.clustered_manta_vcf_indexes": [f"{cb}/clustered_manta_vcf/{cohort_id}.cluster_batch.manta.vcf.gz.tbi"],
+            "JoinRawCalls.clustered_wham_vcfs": [f"{cb}/clustered_wham_vcf/{cohort_id}.cluster_batch.wham.vcf.gz"],
+            "JoinRawCalls.clustered_wham_vcf_indexes": [f"{cb}/clustered_wham_vcf/{cohort_id}.cluster_batch.wham.vcf.gz.tbi"],
+            "JoinRawCalls.clustered_scramble_vcfs": [f"{cb}/clustered_scramble_vcf/{cohort_id}.cluster_batch.scramble.vcf.gz"],
+            "JoinRawCalls.clustered_scramble_vcf_indexes": [f"{cb}/clustered_scramble_vcf/{cohort_id}.cluster_batch.scramble.vcf.gz.tbi"],
+            "JoinRawCalls.gatk_docker": d["gatk"],
+            "JoinRawCalls.sv_base_mini_docker": d["svbm"],
+            "JoinRawCalls.sv_pipeline_docker": d["svp"],
+        }
+
+    if module_key == "sv_concordance":
+        return {
+            "SVConcordance.eval_vcf": f"{batch}/refine_complex_variants/{cohort_id}.refine_complex.cpx_refined.vcf.gz",
+            "SVConcordance.truth_vcf": f"{batch}/join_raw_calls/{cohort_id}.join_raw_calls.vcf.gz",
+            "SVConcordance.output_prefix": f"{cohort_id}.sv_concordance",
+            "SVConcordance.contig_list": f"{ref}/gs_primary_contigs.list",
+            "SVConcordance.reference_dict": f"{ref}/Homo_sapiens_assembly38.dict",
+            "SVConcordance.gatk_docker": d["gatk"],
+            "SVConcordance.sv_base_mini_docker": d["svbm"],
+        }
+
+    if module_key == "score_genotypes":
+        gt = f"{ref}/ucsc-genome-tracks"
+        return {
+            "ScoreGenotypes.vcf": f"{batch}/sv_concordance/{cohort_id}.sv_concordance.vcf.gz",
+            "ScoreGenotypes.output_prefix": f"{cohort_id}.score_genotypes",
+            "ScoreGenotypes.gq_recalibrator_model_file": f"{ref}/gatk-sv-recalibrator.aou_phase_1.v1.model",
+            # AoU model estimates AF from genotypes only for >=100-sample cohorts;
+            # lower the threshold so small/validation cohorts (which lack an AF
+            # INFO field) can be scored. Harmless for large cohorts.
+            "ScoreGenotypes.recalibrate_gq_args": ["--min-samples-to-estimate-allele-frequency", "1"],
+            "ScoreGenotypes.genome_tracks": [
+                f"{gt}/hg38-RepeatMasker.bed.gz",
+                f"{gt}/hg38-Segmental-Dups.bed.gz",
+                f"{gt}/hg38-Simple-Repeats.bed.gz",
+                f"{gt}/hg38_umap_s100.bed.gz",
+                f"{gt}/hg38_umap_s24.bed.gz",
+            ],
+            "ScoreGenotypes.linux_docker": d["linux"],
+            "ScoreGenotypes.gatk_docker": d["gatk"],
+            "ScoreGenotypes.sv_base_mini_docker": d["svbm"],
+            "ScoreGenotypes.sv_pipeline_docker": d["svp"],
+        }
+
+    if module_key == "filter_genotypes":
+        return {
+            "FilterGenotypes.vcf": f"{batch}/score_genotypes/{cohort_id}.score_genotypes.gq_recalibrated.vcf.gz",
+            "FilterGenotypes.output_prefix": f"{cohort_id}.filter_genotypes",
+            "FilterGenotypes.ploidy_table": f"{batch}/join_raw_calls/{cohort_id}.join_raw_calls.ploidy.tsv",
+            "FilterGenotypes.sl_cutoff_table": f"{ref}/aou_sl_cutoff_table.tsv",
+            "FilterGenotypes.primary_contigs_fai": f"{ref}/gs_primary_contigs.fai",
+            "FilterGenotypes.ped_file": ped,
+            "FilterGenotypes.run_qc": False,
+            "FilterGenotypes.sv_base_mini_docker": d["svbm"],
+            "FilterGenotypes.sv_pipeline_docker": d["svp"],
+        }
+
+    raise KeyError(f"no Phase C override builder for module {module_key!r}")
+
+
 def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[StageRecord]:
-    """Run the post-processing chain on the cohort VCF:
+    """Run the post-processing chain on the cohort VCF natively on HealthOmics:
 
       C.1 RefineComplexVariants  (refines complex SV calls)
       C.2 JoinRawCalls           (start of GQ recalibrator chain)
@@ -691,6 +810,12 @@ def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[
       C.5 FilterGenotypes        (drops low-confidence calls)
 
     Each step's output feeds the next; failure aborts the chain.
+
+    These five run natively on HealthOmics using WDL_LENIENT-engine workflows
+    (validated 2026-06-08: runs 1591648 / 3918249 / 2619129 / 8071264 and the
+    SVConcordance/MainVcfQC retests). Lenient mode clears the ~47s multi-task
+    kill for these scatter/aggregate modules. Only MakeCohortVcf.CombineBatches
+    still requires the EC2 hybrid (see phase_c_makecohortvcf_hybrid).
     """
     print("=" * 78)
     print(f"PHASE C.1-C.5: post-processing chain  ({args.cohort_id})")
@@ -717,6 +842,7 @@ def phase_c_post_processing(args: argparse.Namespace, output_base: str) -> list[
             cohort_id=args.cohort_id,
             sample_count=args.sample_count,
             output_base=output_base,
+            parameter_overrides=_phase_c_overrides(module_key, args.cohort_id, output_base),
         )
         print(f"  Started run {rec.id} ({rec.name})")
         info = poll_healthomics_run(omics, rec.id, label=module_key)
@@ -743,6 +869,20 @@ def phase_d2_main_vcf_qc(args: argparse.Namespace, output_base: str) -> StageRec
     if skipped is not None:
         return skipped
 
+    d = _gq_dockers()
+    overrides = {
+        "MainVcfQc.vcfs": [f"{output_base}/batch/annotate_vcf/{args.cohort_id}.annotated.vcf.gz"],
+        "MainVcfQc.prefix": f"{args.cohort_id}.main_vcf_qc",
+        "MainVcfQc.primary_contigs_fai": f"{REF_BASE}/gs_primary_contigs.fai",
+        "MainVcfQc.ped_file": f"{REF_BASE}/cohort-{args.cohort_id}.ped",
+        "MainVcfQc.sv_per_shard": 2500,
+        "MainVcfQc.samples_per_shard": 600,
+        "MainVcfQc.do_per_sample_qc": True,
+        "MainVcfQc.sv_base_mini_docker": d["svbm"],
+        "MainVcfQc.sv_pipeline_docker": d["svp"],
+        "MainVcfQc.sv_pipeline_qc_docker": d["svp"],
+    }
+
     omics = boto3.client("omics", region_name=REGION)
     rec = _start_cohort_module(
         omics,
@@ -750,6 +890,7 @@ def phase_d2_main_vcf_qc(args: argparse.Namespace, output_base: str) -> StageRec
         cohort_id=args.cohort_id,
         sample_count=args.sample_count,
         output_base=output_base,
+        parameter_overrides=overrides,
     )
     print(f"  Started run {rec.id} ({rec.name})")
     info = poll_healthomics_run(omics, rec.id, label="main_vcf_qc")
