@@ -341,6 +341,32 @@ def _now_iso() -> str:
 # --------------------------------------------------------------------------- #
 # HealthOmics polling
 # --------------------------------------------------------------------------- #
+def _get_run_resilient(omics_client, run_id: str, *, retries: int = 8) -> dict[str, Any]:
+    """get_run with retry on transient network/endpoint errors.
+
+    A 2-hour foreground orchestration polls get_run hundreds of times; a single
+    transient EndpointConnectionError / throttle should not abort the whole run.
+    Retries with exponential backoff (cap 60s); re-raises after `retries`.
+    """
+    import botocore.exceptions as _be
+    delay = 5
+    for attempt in range(retries):
+        try:
+            return omics_client.get_run(id=run_id)
+        except (_be.EndpointConnectionError, _be.ConnectionError,
+                _be.ConnectTimeoutError, _be.ReadTimeoutError,
+                _be.ClientError) as exc:
+            # ClientError covers ThrottlingException / 5xx; re-raise on the
+            # last attempt so genuine failures still surface.
+            if attempt == retries - 1:
+                raise
+            print(f"    [poll] transient error on get_run({run_id}): "
+                  f"{type(exc).__name__}; retry {attempt + 1}/{retries} in {delay}s")
+            time.sleep(delay)
+            delay = min(delay * 2, 60)
+    raise RuntimeError("unreachable")
+
+
 def poll_healthomics_run(
     omics_client, run_id: str, *, label: str, poll_interval: int = POLL_INTERVAL_SEC
 ) -> dict[str, Any]:
@@ -348,7 +374,7 @@ def poll_healthomics_run(
     started = time.time()
     last = None
     while True:
-        info = omics_client.get_run(id=run_id)
+        info = _get_run_resilient(omics_client, run_id)
         status = info.get("status")
         if status != last:
             print(
@@ -370,7 +396,7 @@ def poll_runs_until_done(
     started = time.time()
     while pending:
         for rid in list(pending):
-            info = omics_client.get_run(id=rid)
+            info = _get_run_resilient(omics_client, rid)
             status = info.get("status")
             if status in TERMINAL_STATUSES:
                 results[rid] = info
@@ -804,11 +830,48 @@ _PRIMARY_VCF_DECL = {
 }
 
 
+def _resolve_phase_b_out_prefix(s3, output_base: str, module_dir: str) -> str | None:
+    """Find a completed Phase B module's run-scoped `out/` prefix.
+
+    Phase B writes outputs under the nested HealthOmics layout
+    ``{output_base}/batch/{module_dir}/{run_id}/out/{decl}/{file}`` where
+    ``module_dir`` is the hyphenated module name (e.g. ``cluster-batch``,
+    ``gather-batch-evidence``). The orchestrator's Phase C input builders
+    otherwise guessed a static ``{batch}/{module}/out/`` path that does not
+    exist. This lists the module dir, picks the most-recent run-id sub-prefix
+    that contains an ``out/`` folder, and returns the full
+    ``s3://.../{module_dir}/{run_id}/out`` URI (no trailing slash), or None
+    when nothing is found.
+    """
+    base = f"{output_base}/batch/{module_dir}/"
+    bucket, _ = _split_s3(base)
+    prefix = base[len("s3://") + len(bucket) + 1:]
+    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
+    run_prefixes = [cp["Prefix"] for cp in resp.get("CommonPrefixes", [])]
+    if not run_prefixes:
+        return None
+    # Each run_prefix is ".../{module_dir}/{run_id}/". Prefer those that have
+    # an out/ child; pick the lexically-largest (latest-launched run-id tends
+    # to sort last, and there is normally just one per cohort).
+    candidates = []
+    for rp in sorted(run_prefixes):
+        out_probe = s3.list_objects_v2(
+            Bucket=bucket, Prefix=f"{rp}out/", MaxKeys=1
+        )
+        if out_probe.get("KeyCount", 0) > 0:
+            candidates.append(rp)
+    if not candidates:
+        return None
+    chosen = candidates[-1]
+    return f"s3://{bucket}/{chosen}out"
+
+
 def _phase_c_overrides(
     module_key: str,
     cohort_id: str,
     output_base: str,
     resolved: dict[str, str] | None = None,
+    s3=None,
 ) -> dict[str, Any]:
     """Build the HealthOmics `parameters` dict for a Phase C post-processing
     module, wiring each step's input to the prior step's S3 output.
@@ -835,7 +898,12 @@ def _phase_c_overrides(
         # Consumes the MakeCohortVcf cleaned cohort VCF (EC2-hybrid output)
         # plus per-batch PE metrics / depth beds from GatherBatchEvidence and
         # the batch sample list. Single-batch cohort -> 1-element arrays.
-        gbe = f"{batch}/gather-batch-evidence"
+        # GBE outputs live under the nested {run_id}/out/ layout; resolve it.
+        gbe = None
+        if s3 is not None:
+            gbe = _resolve_phase_b_out_prefix(s3, output_base, "gather-batch-evidence")
+        if gbe is None:
+            gbe = f"{batch}/gather-batch-evidence"  # static fallback
         return {
             "RefineComplexVariants.vcf": f"{batch}/make-cohort-vcf-ec2/cleaned/{cohort_id}.cleaned.vcf.gz",
             "RefineComplexVariants.prefix": f"{cohort_id}.refine_complex",
@@ -854,7 +922,26 @@ def _phase_c_overrides(
         }
 
     if module_key == "join_raw_calls":
-        cb = f"{batch}/cluster_batch/out"
+        cb = None
+        if s3 is not None:
+            cb = _resolve_phase_b_out_prefix(s3, output_base, "cluster-batch")
+        if cb is None:
+            cb = f"{batch}/cluster_batch/out"  # static fallback
+        # Co-locate the .tbi for each clustered VCF input. ClusterBatch's
+        # output layout writes .tbi only into the sibling {decl}_index/
+        # folder (same wrinkle as Phase C output decls). Without this,
+        # JoinRawCalls's `vcf + ".tbi"` localizer fails preflight with
+        # `INPUT_URI_NOT_FOUND` / "S3 object not found". The resolver
+        # below mirrors the data .tbi next to the data VCF idempotently.
+        run_scope = cb[: -len("/out")] if cb.endswith("/out") else cb
+        if s3 is not None and "/cluster-batch/" in run_scope:
+            for decl in ("clustered_depth_vcf", "clustered_manta_vcf",
+                         "clustered_wham_vcf", "clustered_scramble_vcf"):
+                try:
+                    _resolve_output_and_colocate_index(s3, run_scope, decl)
+                except RuntimeError as exc:
+                    print(f"  WARNING: clustered VCF index co-locate failed "
+                          f"for {decl}: {exc}")
         return {
             "JoinRawCalls.prefix": f"{cohort_id}.join_raw_calls",
             "JoinRawCalls.ped_file": ped,
@@ -991,7 +1078,7 @@ def phase_c_post_processing(
             sample_count=args.sample_count,
             output_base=output_base,
             parameter_overrides=_phase_c_overrides(
-                module_key, args.cohort_id, output_base, resolved=resolved
+                module_key, args.cohort_id, output_base, resolved=resolved, s3=s3
             ),
         )
         print(f"  Started run {rec.id} ({rec.name})")
